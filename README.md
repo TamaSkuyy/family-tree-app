@@ -1,114 +1,179 @@
+# 🌳 Family Tree App
+
+A fullstack family tree management application built with **Go** (Gin + GORM + SQLite) and **React** (Vite + Tailwind CSS + daisyUI). Create, manage, and visualize family relationships across generations.
+
+## ✨ Features
+
+- **Family Tree Visualization** — Interactive tree view of parents, children, and spouses
+- **Person Management** — CRUD operations with search and filtering
+- **Relationship Management** — Add/remove parent-child and spouse relationships
+- **Authentication** — JWT-based login/register with role-based access (admin/user)
+- **Admin Panel** — User management with role control
+- **Public Mode** — Optional read-only access for showcasing family trees
+- **API Documentation** — Auto-generated Swagger docs
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Go** 1.21+
+- **Node.js** 16+
+- **npm**
+
+### One-command setup
+
+```bash
+# First time: install dependencies + seed demo data
+./dev-local.sh --init
+
+# Start both backend & frontend
+./dev-local.sh
+```
+
+Backend runs on `http://localhost:8080`, frontend on `http://localhost:3000`. Press `Ctrl+C` to stop.
+
+### Manual setup
+
+```bash
+# Backend (terminal 1)
+cd backend
+go mod tidy
+go run cmd/seed.go        # optional: create demo data
+go run cmd/main.go        # server on :8080
+
+# Frontend (terminal 2)
+cd frontend
+npm install
+npm run dev               # Vite on :3000
+```
+
+### Verify
+
+```bash
+curl http://localhost:8080/health
+```
+
 ## 📊 Demo Data
 
-Aplikasi sudah include dengan demo data untuk testing. Setelah menjalankan `go run cmd/seed.go`, Anda akan mendapatkan:
+Running `go run cmd/seed.go` creates a 3-generation Johnson family:
 
-### Family Structure:
-
-- **Grandparents**: Robert & Mary Johnson (born 1945, 1948)
-- **Parents**:
-  - David & Lisa Johnson (born 1972, 1978)
-  - Sarah & Michael Smith (born 1975, 1970)
-- **Children**:
-  - James Johnson (born 2000)
-  - Emma Johnson (born 2003)
-  - Oliver Johnson (born 2005)
-  - Sophia Johnson (born 2008)
-
-### Relationships:
-
-- Robert ↔ Mary (spouses)
-- David ↔ Lisa (spouses)
-- Sarah ↔ Michael (spouses)
-- Robert & Mary → David & Sarah (parents)
-- David & Lisa → James & Emma (parents)
-- Sarah & Michael → Oliver & Sophia (parents)
-
-Anda bisa menggunakan data ini untuk explore fitur family tree visualization!
-
-## 📚 API Documentation
-
-# Install dependencies
-
-go mod tidy
-
-# (Optional) Create demo data
-
-go run cmd/seed.go
-
-# Jalankan server
-
-go run cmd/main.go
-
-````
-
-Backend akan berjalan di `http://localhost:8080`
-
-### 2. Setup Frontend (Vite)
-
-```bash
-# Buka terminal baru, masuk ke folder frontend
-cd frontend
-
-# Install dependencies
-npm install
-
-# Jalankan development server
-npm run dev
+```
+Robert & Mary Johnson (grandparents)
+├── David & Lisa Johnson
+│   ├── James Johnson
+│   └── Emma Johnson
+└── Sarah & Michael Smith
+    ├── Oliver Johnson
+    └── Sophia Johnson
 ```
 
-Frontend akan berjalan di `http://localhost:3000` (Vite dev server)
+Default admin: `admin@example.com` / `admin123`
 
-### 3. Quick Start (Recommended)
+## 📚 API
 
-Jika Anda ingin menjalankan semua dengan satu command:
+Base URL: `http://localhost:8080/api/v1`
+
+### Auth
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/auth/register` | — | Register new user |
+| `POST` | `/auth/login` | — | Login, returns JWT |
+| `GET` | `/auth/me` | Bearer | Get current user |
+
+### Persons
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/persons` | — | List all persons |
+| `GET` | `/persons/:id` | — | Get person by ID |
+| `POST` | `/persons` | Bearer | Create person |
+| `PUT` | `/persons/:id` | Bearer | Update person |
+| `DELETE` | `/persons/:id` | Admin | Delete person |
+
+### Relationships
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/relationships/parent-child` | Bearer | Add parent-child |
+| `DELETE` | `/relationships/parent-child/:parentId/:childId` | Admin | Remove parent-child |
+| `POST` | `/relationships/spouse` | Bearer | Add spouse |
+| `DELETE` | `/relationships/spouse/:person1Id/:person2Id` | Admin | Remove spouse |
+
+### Other
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/family-tree/:id` | Get nested family tree |
+| `GET` | `/search?q=name` | Search persons |
+| `GET` | `/health` | Health check |
+| `GET` | `/admin/users` | Admin: list users |
+
+## 🏗️ Architecture
+
+```
+backend/                    Go / Gin / GORM / SQLite
+├── cmd/                    Entry points (server, seed)
+├── internal/
+│   ├── handlers/           HTTP layer (DTOs, validation)
+│   ├── middleware/          Auth, rate limiting, RBAC
+│   ├── models/             GORM models (Person, User, relationships)
+│   └── services/           Business logic + DB operations
+└── pkg/database/           DB connection + AutoMigrate
+
+frontend/                   React 18 / Vite / Tailwind + daisyUI
+├── src/
+│   ├── components/         UI components
+│   ├── contexts/           Auth + Toast providers
+│   ├── hooks/              Custom hooks (useApi, usePagination)
+│   ├── pages/              Route pages
+│   └── services/           Axios API client
+```
+
+## 🔧 Scripts
+
+| Script | Purpose |
+|---|---|
+| `./dev-local.sh` | Start dev environment (backend + frontend) |
+| `./dev-local.sh --init` | Install deps + seed demo data |
+| `./dev-local.sh --stop` | Stop all processes |
+| `./dev-local.sh go [args]` | Run go commands in backend/ |
+| `./dev-local.sh npm [args]` | Run npm commands in frontend/ |
+| `./deploy-production.sh` | Build production artefacts to `build/` |
+
+## 🐳 Docker (Production)
 
 ```bash
-# Install Go jika belum ada (Linux)
-curl -fsSL https://golang.org/dl/go1.21.5.linux-amd64.tar.gz -o go1.21.5.linux-amd64.tar.gz
-mkdir -p ~/go && tar -C ~/go -xzf go1.21.5.linux-amd64.tar.gz --strip-components=1
-export PATH=$PATH:~/go/bin
+# Build and start
+docker compose up -d --build
 
-# Setup backend
+# Stop
+docker compose down
+```
+
+Frontend on `:80`, backend proxied through nginx.
+
+## 🔑 Environment Variables
+
+```bash
+ENV=production            # Set to 'production' for strict JWT_SECRET check
+JWT_SECRET=<secret>       # Required, min 16 chars in production
+PUBLIC_MODE=true          # Optional: allow read-only access without login
+```
+
+## 🧪 Testing
+
+```bash
 cd backend
-export PATH=$PATH:~/go/bin
-export GOPATH=~/go-workspace
-go mod tidy
-go run cmd/seed.go  # Create demo data
-
-# Start backend (terminal 1)
-go run cmd/main.go
-
-# Setup frontend (terminal 2)
-cd ../frontend
-npm install
-npm start
+go test ./... -v
+go test ./... -coverprofile=coverage.out
+go tool cover -html=coverage.out
 ```
 
-### 4. Test API
+## 📋 Roadmap
 
-```bash
-# Health check
-curl http://localhost:8080/health
+See [ROADMAP.md](ROADMAP.md) for planned features and future development phases.
 
-# Get all persons
-curl http://localhost:8080/api/v1/persons
+## 📄 License
 
-# Get family tree
-curl http://localhost:8080/api/v1/family-tree/[PERSON_ID]
-```
-
-### Authentication
-
-The backend exposes `/api/v1/auth/register`, `/api/v1/auth/login` and `/api/v1/auth/me`.
-
-By default a development JWT secret is used. For development you can set your own secret:
-
-```bash
-export JWT_SECRET="replace-this-with-a-strong-secret"
-go run cmd/main.go
-```
-
-The frontend stores the JWT in `localStorage.ft_token` and automatically adds it to requests.
-If the token expires or is invalid, the frontend will clear it and redirect to `/login`.
-
-````
+MIT
