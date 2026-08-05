@@ -1,0 +1,117 @@
+package services
+
+import (
+	"errors"
+	"family-tree-backend/internal/models"
+	"family-tree-backend/pkg/database"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type PersonService struct{}
+
+func NewPersonService() *PersonService {
+	return &PersonService{}
+}
+
+func (s *PersonService) CreatePerson(person *models.Person) error {
+	return database.DB.Create(person).Error
+}
+
+func (s *PersonService) GetPerson(id uuid.UUID) (*models.Person, error) {
+	var person models.Person
+	err := database.DB.Preload("ParentRelationships.Parent").
+		Preload("ChildRelationships.Child").
+		Preload("SpouseRelationships.Person2").
+		First(&person, "id = ?", id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &person, nil
+}
+
+func (s *PersonService) GetAllPersons() ([]models.Person, error) {
+	var persons []models.Person
+	err := database.DB.Find(&persons).Error
+	return persons, err
+}
+
+func (s *PersonService) UpdatePerson(id uuid.UUID, updates *models.Person) error {
+	return database.DB.Model(&models.Person{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (s *PersonService) DeletePerson(id uuid.UUID) error {
+	// First delete relationships
+	database.DB.Where("parent_id = ?", id).Delete(&models.ParentChild{})
+	database.DB.Where("child_id = ?", id).Delete(&models.ParentChild{})
+	database.DB.Where("person1_id = ?", id).Delete(&models.Spouse{})
+	database.DB.Where("person2_id = ?", id).Delete(&models.Spouse{})
+	
+	// Then delete person
+	return database.DB.Delete(&models.Person{}, "id = ?", id).Error
+}
+
+func (s *PersonService) AddParentChild(parentID, childID uuid.UUID) error {
+	// Check if relationship already exists
+	var existing models.ParentChild
+	err := database.DB.Where("parent_id = ? AND child_id = ?", parentID, childID).First(&existing).Error
+	if err == nil {
+		return errors.New("relationship already exists")
+	}
+
+	relationship := &models.ParentChild{
+		ParentID: parentID,
+		ChildID:  childID,
+	}
+	return database.DB.Create(relationship).Error
+}
+
+func (s *PersonService) RemoveParentChild(parentID, childID uuid.UUID) error {
+	return database.DB.Where("parent_id = ? AND child_id = ?", parentID, childID).Delete(&models.ParentChild{}).Error
+}
+
+func (s *PersonService) AddSpouse(person1ID, person2ID uuid.UUID) error {
+	// Check if relationship already exists
+	var existing models.Spouse
+	err := database.DB.Where("(person1_id = ? AND person2_id = ?) OR (person1_id = ? AND person2_id = ?)", 
+		person1ID, person2ID, person2ID, person1ID).First(&existing).Error
+	if err == nil {
+		return errors.New("spouse relationship already exists")
+	}
+
+	relationship := &models.Spouse{
+		Person1ID: person1ID,
+		Person2ID: person2ID,
+		StartDate: func() *time.Time { t := time.Now(); return &t }(),
+	}
+	return database.DB.Create(relationship).Error
+}
+
+func (s *PersonService) RemoveSpouse(person1ID, person2ID uuid.UUID) error {
+	return database.DB.Where("(person1_id = ? AND person2_id = ?) OR (person1_id = ? AND person2_id = ?)", 
+		person1ID, person2ID, person2ID, person1ID).Delete(&models.Spouse{}).Error
+}
+
+func (s *PersonService) GetFamilyTree(rootID uuid.UUID) (*models.Person, error) {
+	var root models.Person
+	err := database.DB.
+		Preload("ParentRelationships.Parent.ParentRelationships.Parent").
+		Preload("ParentRelationships.Parent.ChildRelationships.Child").
+		Preload("ChildRelationships.Child.ParentRelationships.Parent").
+		Preload("ChildRelationships.Child.ChildRelationships.Child").
+		Preload("SpouseRelationships.Person2").
+		First(&root, "id = ?", rootID).Error
+	if err != nil {
+		return nil, err
+	}
+	return &root, nil
+}
+
+func (s *PersonService) SearchPersons(query string) ([]models.Person, error) {
+	var persons []models.Person
+	searchPattern := "%" + query + "%"
+	err := database.DB.Where("first_name LIKE ? OR last_name LIKE ? OR email LIKE ?", 
+		searchPattern, searchPattern, searchPattern).Find(&persons).Error
+	return persons, err
+}

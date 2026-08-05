@@ -1,0 +1,6 @@
+/* Import existing app-level styles before Tailwind so postcss-import runs first */
+@import "./App.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
