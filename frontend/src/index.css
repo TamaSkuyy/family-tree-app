@@ -1,9 +1,7 @@
-/* Import existing app-level styles before Tailwind so postcss-import runs first */
+/* Tailwind 4 + daisyUI */
 @import "./App.css";
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "daisyui";
 
 @layer utilities {
   /* ── Fade in + slide up ─────────────────────────────────────────── */

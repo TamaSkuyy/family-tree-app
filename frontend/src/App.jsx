@@ -45,8 +45,8 @@ function AppLayout({ children }) {
       <main id="main-content" role="main" className="py-8">
         <div className="container mx-auto px-4">{children}</div>
       </main>
-      <footer className="py-6 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} Family Tree App
+      <footer className="py-6 text-center text-sm text-slate-400 border-t border-slate-200 mt-8">
+        © {new Date().getFullYear()} Family Tree App  ·  Built with ❤️
       </footer>
     </div>
   );

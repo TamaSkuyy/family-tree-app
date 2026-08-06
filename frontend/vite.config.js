@@ -7,12 +7,7 @@ export default defineConfig({
         dedupe: ['react', 'react-dom'],
     },
     optimizeDeps: {
-        include: ['react', 'react-dom', 'framer-motion', 'sonner'],
-        esbuildOptions: {
-            loader: {
-                '.js': 'jsx',
-            },
-        },
+        include: ['react', 'react-dom', 'motion', 'sonner'],
     },
     server: {
         port: 3000,

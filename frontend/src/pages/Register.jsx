@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { motion, AnimatePresence } from "motion/react";
 import {
-  TreePine, User, Mail, Lock, Eye, EyeOff, UserPlus, Github,
+  TreePine, User, Mail, Lock, Eye, EyeOff, UserPlus, ExternalLink,
   Loader2, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -13,24 +14,13 @@ import { authAPI } from "../services/api";
 import AuthLeftPanel from "../components/AuthLeftPanel";
 import PasswordStrength from "../components/PasswordStrength";
 
-// ═══════════════════════════════════════════════════════════════════════
-// CONSTANTS
-// ═══════════════════════════════════════════════════════════════════════
-
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().min(1, "Email is required").email("Invalid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Must contain an uppercase letter")
-    .regex(/[0-9]/, "Must contain a number"),
+  password: z.string().min(8, "Password must be at least 8 characters").regex(/[A-Z]/, "Must contain an uppercase letter").regex(/[0-9]/, "Must contain a number"),
   confirmPassword: z.string(),
   terms: z.literal(true, { errorMap: () => ({ message: "You must accept the Terms of Service" }) }),
-}).refine((d) => d.password === d.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+}).refine((d) => d.password === d.confirmPassword, { message: "Passwords don't match", path: ["confirmPassword"] });
 
 const FEATURES = [
   "Build unlimited family trees",
@@ -39,10 +29,14 @@ const FEATURES = [
   "Private & secure by default",
 ];
 
-
-// ═══════════════════════════════════════════════════════════════════════
-// SUB-COMPONENTS
-// ═══════════════════════════════════════════════════════════════════════
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] } },
+};
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
@@ -53,11 +47,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-
-// ═══════════════════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════════════
-
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -66,12 +55,7 @@ export default function Register() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm({
     resolver: zodResolver(registerSchema),
     mode: "onChange",
     defaultValues: { name: "", email: "", password: "", confirmPassword: "", terms: false },
@@ -84,175 +68,127 @@ export default function Register() {
     try {
       const res = await authAPI.register(data);
       const token = res?.data?.data?.token;
-      if (token) {
-        localStorage.setItem("ft_token", token);
-        await login({ email: data.email, password: data.password });
-      }
-      toast.success("Account created! Welcome to Family Tree 🎉", {
-        description: "Redirecting you to your dashboard...",
-      });
+      if (token) { localStorage.setItem("ft_token", token); await login({ email: data.email, password: data.password }); }
+      toast.success("Account created! Welcome to Family Tree 🎉", { description: "Redirecting you to your dashboard..." });
       setTimeout(() => navigate("/"), 800);
     } catch (err) {
       setShakeKey((k) => k + 1);
-      toast.error("Registration failed", {
-        description: err?.response?.data?.error || "Please check your information and try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+      toast.error("Registration failed", { description: err?.response?.data?.error || "Please check your information and try again." });
+    } finally { setIsSubmitting(false); }
   }, [login, navigate]);
 
-  const formAnim = (delay) => ({ animation: `fadeInUp 0.5s ${delay}s both` });
+  const inputClass = (err) => `w-full h-12 pl-11 pr-12 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all duration-200 outline-none ${err ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`;
 
   return (
     <div className="min-h-screen flex">
-      {/* ── LEFT PANEL ─────────────────────────────────────────────── */}
       <AuthLeftPanel
-        heading={
-          <>Start Your{" "}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-cyan-100">Family Journey</span>
-          </>
-        }
+        heading={<>Start Your{" "}<span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-cyan-100">Family Journey</span></>}
         subtext="Join thousands of families preserving their heritage and creating beautiful family trees together."
-        features={FEATURES}
-        stats="10,000+ Families  •  50,000+ Members  •  100+ Countries"
+        features={FEATURES} stats="10,000+ Families  •  50,000+ Members  •  100+ Countries"
       />
 
-      {/* ── RIGHT PANEL ────────────────────────────────────────────── */}
-      <div
-        className="flex-1 flex items-center justify-center px-6 py-12
-          bg-white dark:bg-slate-900
-          lg:bg-gradient-to-br lg:from-slate-50 lg:to-white
-          lg:dark:from-slate-900 lg:dark:to-slate-950"
-        style={{ animation: "slideFromRight 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) both" }}
-      >
-        <div className="w-full max-w-[460px]">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex justify-center mb-8" style={{ animation: "fadeInUp 0.5s both" }}>
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 shadow-lg shadow-emerald-500/20">
-              <TreePine className="w-8 h-8 text-white" />
-            </div>
-          </div>
+      <motion.div initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="flex-1 flex items-center justify-center px-6 py-12 bg-white dark:bg-slate-900 lg:bg-gradient-to-br lg:from-slate-50 lg:to-white lg:dark:from-slate-900 lg:dark:to-slate-950">
 
-          {/* Header */}
-          <div className="text-center lg:text-left mb-8" style={{ animation: "fadeInUp 0.5s 0.1s both" }}>
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="w-full max-w-[460px]">
+          <motion.div variants={itemVariants} className="lg:hidden flex justify-center mb-8">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 shadow-lg shadow-emerald-500/20"><TreePine className="w-8 h-8 text-white" /></div>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="text-center lg:text-left mb-8">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Create your account</h2>
             <p className="text-slate-500 dark:text-slate-400 mt-2">Start building your family tree in minutes</p>
-          </div>
+          </motion.div>
 
-          {/* Form */}
-          <form
-            key={shakeKey}
-            onSubmit={handleSubmit(onSubmit)}
-            noValidate
-            className="space-y-4"
-          >
+          <motion.form key={shakeKey}
+            animate={{ x: shakeKey > 0 ? [0, -8, 8, -8, 8, -4, 4, 0] : 0 }}
+            transition={{ duration: 0.5 }}
+            onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+
             {/* Name */}
-            <div style={formAnim(0.2)}>
+            <motion.div variants={itemVariants}>
               <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input id="name" type="text" autoComplete="name" placeholder="John Doe" {...register("name")}
-                  className={`w-full h-12 pl-11 pr-4 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all duration-200 outline-none ${errors.name ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
+              <div className="relative"><User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input id="name" type="text" autoComplete="name" placeholder="John Doe" {...register("name")} className={inputClass(errors.name)} />
               </div>
-              {errors.name && <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.name.message}</p>}
-            </div>
+              <AnimatePresence>{errors.name && <motion.p initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.name.message}</motion.p>}</AnimatePresence>
+            </motion.div>
 
             {/* Email */}
-            <div style={formAnim(0.3)}>
+            <motion.div variants={itemVariants}>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input id="email" type="email" autoComplete="email" placeholder="you@example.com" {...register("email")}
-                  className={`w-full h-12 pl-11 pr-4 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all duration-200 outline-none ${errors.email ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
+              <div className="relative"><Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input id="email" type="email" autoComplete="email" placeholder="you@example.com" {...register("email")} className={inputClass(errors.email)} />
               </div>
-              {errors.email && <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.email.message}</p>}
-            </div>
+              <AnimatePresence>{errors.email && <motion.p initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.email.message}</motion.p>}</AnimatePresence>
+            </motion.div>
 
             {/* Password */}
-            <div style={formAnim(0.4)}>
+            <motion.div variants={itemVariants}>
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input id="password" type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="Create a strong password" {...register("password")}
-                  className={`w-full h-12 pl-11 pr-12 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all duration-200 outline-none ${errors.password ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
-                <button type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}>
+              <div className="relative"><Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input id="password" type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="Create a strong password" {...register("password")} className={inputClass(errors.password)} />
+                <button type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               <PasswordStrength password={passwordValue} />
-              {errors.password && <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.password.message}</p>}
-            </div>
+              <AnimatePresence>{errors.password && <motion.p initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.password.message}</motion.p>}</AnimatePresence>
+            </motion.div>
 
             {/* Confirm Password */}
-            <div style={formAnim(0.5)}>
+            <motion.div variants={itemVariants}>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Confirm Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input id="confirmPassword" type={showConfirm ? "text" : "password"} autoComplete="new-password" placeholder="Re-enter your password" {...register("confirmPassword")}
-                  className={`w-full h-12 pl-11 pr-12 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all duration-200 outline-none ${errors.confirmPassword ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
-                <button type="button" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                  aria-label={showConfirm ? "Hide password" : "Show password"}>
+              <div className="relative"><Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input id="confirmPassword" type={showConfirm ? "text" : "password"} autoComplete="new-password" placeholder="Re-enter your password" {...register("confirmPassword")} className={inputClass(errors.confirmPassword)} />
+                <button type="button" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                   {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              {errors.confirmPassword && <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.confirmPassword.message}</p>}
-            </div>
+              <AnimatePresence>{errors.confirmPassword && <motion.p initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.confirmPassword.message}</motion.p>}</AnimatePresence>
+            </motion.div>
 
             {/* Terms */}
-            <div style={formAnim(0.6)}>
+            <motion.div variants={itemVariants}>
               <label className="flex items-start gap-2 cursor-pointer select-none">
-                <input type="checkbox" {...register("terms")}
-                  className="mt-0.5 w-4 h-4 rounded border-2 border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500/20 checked:bg-emerald-600 cursor-pointer" />
-                <span className="text-sm text-slate-600 dark:text-slate-400">
-                  I agree to the{" "}
-                  <span className="text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer hover:underline">Terms of Service</span>
-                  {" "}and{" "}
-                  <span className="text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer hover:underline">Privacy Policy</span>
-                </span>
+                <input type="checkbox" {...register("terms")} className="mt-0.5 w-4 h-4 rounded border-2 border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500/20 checked:bg-emerald-600 cursor-pointer" />
+                <span className="text-sm text-slate-600 dark:text-slate-400">I agree to the <span className="text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer hover:underline">Terms of Service</span> and <span className="text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer hover:underline">Privacy Policy</span></span>
               </label>
-              {errors.terms && <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.terms.message}</p>}
-            </div>
+              <AnimatePresence>{errors.terms && <motion.p initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.terms.message}</motion.p>}</AnimatePresence>
+            </motion.div>
 
             {/* Submit */}
-            <div style={formAnim(0.7)}>
-              <button type="submit" disabled={isSubmitting}
-                className="w-full h-12 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.99] hover:scale-[1.01] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 flex items-center justify-center gap-2">
-                {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /><span>Creating your account...</span></>
-                  : <><span>Create Account</span><UserPlus className="w-5 h-5" /></>}
-              </button>
-            </div>
-          </form>
+            <motion.div variants={itemVariants}>
+              <motion.button type="submit" disabled={isSubmitting} whileHover={isSubmitting ? {} : { scale: 1.01 }} whileTap={isSubmitting ? {} : { scale: 0.99 }}
+                className="w-full h-12 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2">
+                {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /><span>Creating your account...</span></> : <><span>Create Account</span><UserPlus className="w-5 h-5" /></>}
+              </motion.button>
+            </motion.div>
+          </motion.form>
 
           {/* Divider */}
-          <div className="relative my-6" style={{ animation: "fadeInUp 0.5s 0.75s both" }}>
+          <motion.div variants={itemVariants} className="relative my-6">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-slate-700" /></div>
-            <div className="relative flex justify-center">
-              <span className="px-4 text-sm text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900">Or sign up with</span>
-            </div>
-          </div>
+            <div className="relative flex justify-center"><span className="px-4 text-sm text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900">Or sign up with</span></div>
+          </motion.div>
 
-          {/* Social Sign Up */}
-          <div className="grid grid-cols-2 gap-3" style={{ animation: "fadeInUp 0.5s 0.85s both" }}>
-            {[{ icon: <GoogleIcon />, label: "Google" }, { icon: <Github className="w-5 h-5" />, label: "GitHub" }].map((btn) => (
-              <button key={btn.label} type="button"
+          {/* Social */}
+          <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3">
+            {[{ icon: <GoogleIcon />, label: "Google" }, { icon: <ExternalLink className="w-5 h-5" />, label: "GitHub" }].map((btn) => (
+              <motion.button key={btn.label} type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                 onClick={() => toast.info(`${btn.label} sign-up coming soon!`, { description: "We're working on social login integration." })}
-                className="w-full h-12 rounded-xl border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 active:scale-[0.98] hover:scale-[1.02] transition-all duration-200 text-sm font-medium">
+                className="w-full h-12 rounded-xl border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200 text-sm font-medium">
                 {btn.icon}<span>{btn.label}</span>
-              </button>
+              </motion.button>
             ))}
-          </div>
+          </motion.div>
 
-          {/* Footer */}
-          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6" style={{ animation: "fadeInUp 0.5s 0.95s both" }}>
-            Already have an account?{" "}
-            <Link to="/login" className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline underline-offset-2 transition-all">Sign in</Link>
-          </p>
-        </div>
-      </div>
+          <motion.p variants={itemVariants} className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+            Already have an account?{" "}<Link to="/login" className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline underline-offset-2 transition-all">Sign in</Link>
+          </motion.p>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

@@ -27,13 +27,46 @@ type Person struct {
 	Notes     string    `json:"notes"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	
-	// Relationships
-	ParentRelationships []ParentChild `gorm:"foreignKey:ParentID" json:"parent_relationships,omitempty"`
-	ChildRelationships  []ParentChild `gorm:"foreignKey:ChildID" json:"child_relationships,omitempty"`
-	
-	// Spouse relationships
-	SpouseRelationships []Spouse `gorm:"foreignKey:Person1ID" json:"spouse_relationships,omitempty"`
+
+	// Raw GORM relationships (used for Preload, hidden from JSON)
+	ParentRelationships []ParentChild `gorm:"foreignKey:ParentID" json:"-"`
+	ChildRelationships  []ParentChild `gorm:"foreignKey:ChildID" json:"-"`
+	SpouseRelationships []Spouse      `gorm:"foreignKey:Person1ID" json:"-"`
+
+	// Computed fields — intuitive API (populated by PopulateComputed)
+	Parents  []Person `gorm:"-" json:"parents,omitempty"`
+	Children []Person `gorm:"-" json:"children,omitempty"`
+	Spouses  []Person `gorm:"-" json:"spouses,omitempty"`
+}
+
+// PopulateComputed fills the intuitive Parents/Children/Spouses fields
+// from the raw GORM relationship arrays. Call this after Preload queries.
+func (p *Person) PopulateComputed() {
+	// Parents = where person IS the child → rel.Parent is the parent
+	p.Parents = make([]Person, 0, len(p.ChildRelationships))
+	for _, rel := range p.ChildRelationships {
+		if rel.Parent.ID != uuid.Nil {
+			rel.Parent.PopulateComputed()
+			p.Parents = append(p.Parents, rel.Parent)
+		}
+	}
+
+	// Children = where person IS the parent → rel.Child is the child
+	p.Children = make([]Person, 0, len(p.ParentRelationships))
+	for _, rel := range p.ParentRelationships {
+		if rel.Child.ID != uuid.Nil {
+			rel.Child.PopulateComputed()
+			p.Children = append(p.Children, rel.Child)
+		}
+	}
+
+	// Spouses = the other person in the relationship
+	p.Spouses = make([]Person, 0, len(p.SpouseRelationships))
+	for _, rel := range p.SpouseRelationships {
+		if rel.Person2.ID != uuid.Nil {
+			p.Spouses = append(p.Spouses, rel.Person2)
+		}
+	}
 }
 
 type ParentChild struct {

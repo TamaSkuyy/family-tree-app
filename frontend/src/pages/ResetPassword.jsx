@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { motion, AnimatePresence } from "motion/react";
 import {
   TreePine, Lock, Eye, EyeOff, CheckCircle2, Loader2, AlertCircle,
   AlertTriangle, ArrowRight, RefreshCw,
@@ -78,7 +79,7 @@ export default function ResetPassword() {
     }
   }, [token]);
 
-  const anim = (d) => ({ animation: `fadeInUp 0.5s ${d}s both` });
+  const itemVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] } } };
 
   // ── Invalid token ──────────────────────────────────────────────────
   if (step === "invalid") {
@@ -95,16 +96,16 @@ export default function ResetPassword() {
           style={{ animation: "slideFromRight 0.7s both" }}
         >
           <div className="w-full max-w-[420px] text-center">
-            <div style={anim(0.1)}>
+            <div variants={itemVariants}>
               <div className="inline-flex mx-auto mb-6 w-20 h-20 rounded-2xl bg-amber-100 dark:bg-amber-900/30 items-center justify-center">
                 <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-400" />
               </div>
             </div>
-            <div style={anim(0.2)}>
+            <div variants={itemVariants}>
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Link expired or invalid</h2>
               <p className="text-slate-500 dark:text-slate-400 mt-3">This password reset link has expired or is invalid. Please request a new one.</p>
             </div>
-            <div style={anim(0.35)} className="mt-8">
+            <div variants={itemVariants} className="mt-8">
               <Link to="/forgot-password"
                 className="inline-flex items-center gap-2 h-12 px-6 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 transition-all">
                 <RefreshCw className="w-5 h-5" /> Request new link
@@ -131,22 +132,22 @@ export default function ResetPassword() {
           style={{ animation: "slideFromRight 0.7s both" }}
         >
           <div className="w-full max-w-[420px] text-center">
-            <div style={anim(0.1)}>
+            <div variants={itemVariants}>
               <div className="inline-flex mx-auto mb-6 w-20 h-20 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 items-center justify-center">
                 <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
               </div>
             </div>
-            <div style={anim(0.2)}>
+            <div variants={itemVariants}>
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Password Reset!</h2>
               <p className="text-slate-500 dark:text-slate-400 mt-3">Your password has been successfully reset. You can now sign in with your new password.</p>
             </div>
-            <div style={anim(0.35)} className="mt-8">
+            <div variants={itemVariants} className="mt-8">
               <Link to="/login"
                 className="inline-flex items-center gap-2 h-12 px-6 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all">
                 Continue to Login <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
-            <p className="text-sm text-slate-400 mt-4" style={anim(0.45)}>
+            <p className="text-sm text-slate-400 mt-4" variants={itemVariants}>
               Redirecting to login shortly...
             </p>
           </div>
@@ -190,23 +191,23 @@ export default function ResetPassword() {
 
       <div
         className="flex-1 flex items-center justify-center px-6 py-12 bg-white dark:bg-slate-900 lg:bg-gradient-to-br lg:from-slate-50 lg:to-white lg:dark:from-slate-900 lg:dark:to-slate-950"
-        style={{ animation: "slideFromRight 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) both" }}
+        initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
         <div className="w-full max-w-[460px]">
-          <div className="lg:hidden flex justify-center mb-8" style={anim(0)}>
+          <div className="lg:hidden flex justify-center mb-8" variants={itemVariants}>
             <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 shadow-lg shadow-emerald-500/20">
               <TreePine className="w-8 h-8 text-white" />
             </div>
           </div>
 
-          <div style={anim(0.1)}>
+          <div variants={itemVariants}>
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Create new password</h2>
             <p className="text-slate-500 dark:text-slate-400 mt-2">Your new password must be different from previous passwords.</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 mt-8">
             {/* New Password */}
-            <div style={anim(0.2)}>
+            <div variants={itemVariants}>
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">New Password</label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -223,7 +224,7 @@ export default function ResetPassword() {
             </div>
 
             {/* Confirm Password */}
-            <div style={anim(0.3)}>
+            <div variants={itemVariants}>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Confirm New Password</label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -239,14 +240,14 @@ export default function ResetPassword() {
             </div>
 
             {/* Security note */}
-            <div style={anim(0.4)} className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <div variants={itemVariants} className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-800 dark:text-amber-200">
                 After resetting, you&apos;ll be logged out from all devices for security.
               </p>
             </div>
 
-            <div style={anim(0.5)}>
+            <div variants={itemVariants}>
               <button type="submit" disabled={isSubmitting}
                 className="w-full h-12 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.99] hover:scale-[1.01] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2">
                 {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /><span>Resetting password...</span></> : <><span>Reset Password</span><CheckCircle2 className="w-5 h-5" /></>}

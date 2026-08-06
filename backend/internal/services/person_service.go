@@ -21,19 +21,30 @@ func (s *PersonService) CreatePerson(person *models.Person) error {
 
 func (s *PersonService) GetPerson(id uuid.UUID) (*models.Person, error) {
 	var person models.Person
-	err := database.DB.Preload("ParentRelationships.Parent").
-		Preload("ChildRelationships.Child").
+	err := database.DB.Preload("ParentRelationships.Child").
+		Preload("ChildRelationships.Parent").
 		Preload("SpouseRelationships.Person2").
 		First(&person, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
+	person.PopulateComputed()
 	return &person, nil
 }
 
 func (s *PersonService) GetAllPersons() ([]models.Person, error) {
 	var persons []models.Person
-	err := database.DB.Find(&persons).Error
+	err := database.DB.
+		Preload("ParentRelationships.Child").
+		Preload("ChildRelationships.Parent").
+		Preload("SpouseRelationships.Person2").
+		Find(&persons).Error
+	if err != nil {
+		return nil, err
+	}
+	for i := range persons {
+		persons[i].PopulateComputed()
+	}
 	return persons, err
 }
 
@@ -96,22 +107,38 @@ func (s *PersonService) RemoveSpouse(person1ID, person2ID uuid.UUID) error {
 func (s *PersonService) GetFamilyTree(rootID uuid.UUID) (*models.Person, error) {
 	var root models.Person
 	err := database.DB.
-		Preload("ParentRelationships.Parent.ParentRelationships.Parent").
-		Preload("ParentRelationships.Parent.ChildRelationships.Child").
-		Preload("ChildRelationships.Child.ParentRelationships.Parent").
-		Preload("ChildRelationships.Child.ChildRelationships.Child").
+		// Parents (root is child → rel.Parent is parent) + grandparents
+		Preload("ChildRelationships.Parent.ChildRelationships.Parent").
+		// Parents + their other children (root's siblings)
+		Preload("ChildRelationships.Parent.ParentRelationships.Child").
+		// Children (root is parent → rel.Child is child) + grandchildren
+		Preload("ParentRelationships.Child.ParentRelationships.Child").
+		// Children + their other parents (co-parents)
+		Preload("ParentRelationships.Child.ChildRelationships.Parent").
+		// Spouses
 		Preload("SpouseRelationships.Person2").
 		First(&root, "id = ?", rootID).Error
 	if err != nil {
 		return nil, err
 	}
+	root.PopulateComputed()
 	return &root, nil
 }
 
 func (s *PersonService) SearchPersons(query string) ([]models.Person, error) {
 	var persons []models.Person
 	searchPattern := "%" + query + "%"
-	err := database.DB.Where("first_name LIKE ? OR last_name LIKE ? OR email LIKE ?", 
-		searchPattern, searchPattern, searchPattern).Find(&persons).Error
+	err := database.DB.
+		Preload("ParentRelationships.Child").
+		Preload("ChildRelationships.Parent").
+		Preload("SpouseRelationships.Person2").
+		Where("first_name LIKE ? OR last_name LIKE ? OR email LIKE ?",
+			searchPattern, searchPattern, searchPattern).Find(&persons).Error
+	if err != nil {
+		return nil, err
+	}
+	for i := range persons {
+		persons[i].PopulateComputed()
+	}
 	return persons, err
 }

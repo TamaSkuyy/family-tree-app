@@ -16,9 +16,12 @@ func main() {
 	var admin models.User
 	if err := database.DB.First(&admin, "email = ?", "admin@example.com").Error; err != nil {
 		// create default admin with password 'admin123' for demo
-		hash, _ := services.NewAuthService().Register("Admin", "admin@example.com", "admin123")
-		_ = hash
-		log.Println("Created demo admin: admin@example.com / admin123")
+		user, _ := services.NewAuthService().Register("Admin", "admin@example.com", "admin123")
+		database.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("role", "admin")
+		log.Println("Created demo admin: admin@example.com / admin123 (role: admin)")
+	} else if admin.Role != "admin" {
+		database.DB.Model(&models.User{}).Where("id = ?", admin.ID).Update("role", "admin")
+		log.Println("Upgraded existing user to admin: admin@example.com")
 	}
 
 	personService := services.NewPersonService()

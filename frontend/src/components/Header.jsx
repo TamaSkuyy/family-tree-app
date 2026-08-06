@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
-  TreePine, Users, UserCog, Github, Info, LogOut, ChevronDown,
-  Settings, HelpCircle, User, Sun, Moon,
+  TreePine, Users, UserCog, ExternalLink, LogOut, ChevronDown,
+  Settings, HelpCircle, User,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -14,7 +14,6 @@ const NAV_ITEMS = [
 function UserDropdown({ user, logout, navigate }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
 
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -22,85 +21,68 @@ function UserDropdown({ user, logout, navigate }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const toggleDark = () => {
-    setDark(!dark);
-    document.documentElement.classList.toggle("dark");
-  };
-
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2.5 p-1.5 pr-3 rounded-xl
-          hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200
-          border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+          hover:bg-slate-100 transition-all duration-200
+          border border-transparent hover:border-slate-200"
       >
         <div className="relative">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600
             flex items-center justify-center text-white font-bold text-sm
-            ring-2 ring-emerald-500/20 hover:ring-emerald-500/40 transition-all">
+            ring-2 ring-emerald-500/20">
             {user?.name?.charAt(0).toUpperCase()}
           </div>
-          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full
-            bg-emerald-400 border-2 border-white dark:border-slate-900" />
+          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full
+            bg-emerald-400 border-2 border-white" />
         </div>
-        <span className="hidden sm:block text-sm font-medium text-slate-700 dark:text-slate-200 max-w-[100px] truncate">
+        <span className="hidden sm:block text-sm font-medium text-slate-700 max-w-[100px] truncate">
           {user?.name}
         </span>
         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800
-          rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700
-          overflow-hidden z-50"
+        <div className="absolute right-0 top-full mt-2 w-64 bg-white
+          rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50"
           style={{ animation: "fadeInUp 0.2s ease both" }}>
           {/* User info */}
-          <div className="p-4 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-800">
-            <p className="font-semibold text-slate-900 dark:text-white text-sm">{user?.name}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user?.email}</p>
+          <div className="p-4 bg-slate-50">
+            <p className="font-semibold text-slate-900 text-sm">{user?.name}</p>
+            <p className="text-xs text-slate-500 truncate">{user?.email}</p>
             <span className={`inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium
-              ${user?.role === "admin" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}`}>
+              ${user?.role === "admin" ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
               {user?.role}
             </span>
           </div>
 
-          <div className="border-t border-slate-100 dark:border-slate-700" />
+          <div className="border-t border-slate-100" />
 
           {/* Menu items */}
           <div className="p-1.5">
-            <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600
-              dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 transition-colors">
               <User className="w-4 h-4" /> Profile
             </button>
             {user?.role === "admin" && (
               <button onClick={() => { navigate("/admin/users"); setOpen(false); }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600
-                  dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 transition-colors">
                 <Settings className="w-4 h-4" /> Manage Users
               </button>
             )}
-            <button onClick={toggleDark}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600
-                dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              {dark ? "Light Mode" : "Dark Mode"}
-            </button>
-            <button
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600
-                dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 transition-colors">
               <HelpCircle className="w-4 h-4" /> Help & Support
             </button>
           </div>
 
-          <div className="border-t border-slate-100 dark:border-slate-700" />
+          <div className="border-t border-slate-100" />
 
           <div className="p-1.5">
             <button
               onClick={() => { logout(); navigate("/login"); setOpen(false); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm
-                text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                text-red-600 hover:bg-red-50 transition-colors">
               <LogOut className="w-4 h-4" /> Logout
             </button>
           </div>
@@ -117,8 +99,7 @@ export default function Header() {
   const loggedIn = Boolean(user);
 
   return (
-    <header className="sticky top-0 z-40 h-16 bg-white/70 dark:bg-slate-900/70
-      backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50">
+    <header className="sticky top-0 z-40 h-16 bg-white border-b border-slate-200 shadow-sm">
       <div className="h-full max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Left: Logo */}
         <Link to="/" className="flex items-center gap-3 group">
@@ -132,13 +113,13 @@ export default function Header() {
               bg-clip-text text-transparent">
               Family Tree
             </h1>
-            <p className="text-xs text-slate-400 dark:text-slate-500 leading-tight">
+            <p className="text-xs text-slate-500 leading-tight">
               Manage your legacy
             </p>
           </div>
         </Link>
 
-        {/* Center: Nav (desktop) */}
+        {/* Center: Nav */}
         <nav className="hidden md:flex items-center gap-1">
           {NAV_ITEMS.filter((item) => !item.adminOnly || user?.role === "admin").map((item) => {
             const Icon = item.icon;
@@ -147,20 +128,14 @@ export default function Header() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium
-                  transition-all duration-200
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200
                   ${active
-                    ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
-                    : "text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    ? "text-emerald-700 bg-emerald-50"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                   }`}
               >
                 <Icon className="w-4 h-4" />
                 {item.label}
-                {active && (
-                  <span className="absolute bottom-1 left-3 right-3 h-0.5 rounded-full
-                    bg-gradient-to-r from-emerald-500 to-teal-500"
-                    style={{ animation: "fadeInUp 0.3s ease both" }} />
-                )}
               </Link>
             );
           })}
@@ -168,11 +143,10 @@ export default function Header() {
             href="https://github.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium
-              text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100
-              hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium
+              text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200"
           >
-            <Github className="w-4 h-4" /> Repo
+            <ExternalLink className="w-4 h-4" /> Repo
           </a>
         </nav>
 
@@ -184,8 +158,7 @@ export default function Header() {
             className="px-4 py-2 rounded-xl text-sm font-semibold text-white
               bg-gradient-to-r from-emerald-600 to-teal-600
               hover:from-emerald-700 hover:to-teal-700
-              shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30
-              transition-all duration-200">
+              shadow-md shadow-emerald-500/20 transition-all duration-200">
             Sign In
           </Link>
         )}
