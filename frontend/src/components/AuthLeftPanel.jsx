@@ -70,7 +70,7 @@ export default function AuthLeftPanel({ heading, subtext, features, stats }) {
         <motion.div variants={itemVariants} initial="hidden" animate="visible" transition={{ delay: 0.7 }}
           className="flex items-end gap-2 opacity-40">
           {TREE_BARS.map((h, i) => (
-            <motion.div key={i} className="w-3 bg-white rounded-t-full"
+            <motion.div key={i} className="w-3 bg-white dark:bg-slate-800 rounded-t-full"
               style={{ height: h }}
               animate={{ height: [h, h * 1.3, h] }}
               transition={{ duration: 3 + i * 0.3, repeat: Infinity, ease: "easeInOut", delay: i * 0.15 }}

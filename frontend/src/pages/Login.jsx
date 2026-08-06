@@ -103,8 +103,8 @@ export default function Login() {
           </motion.div>
 
           <motion.div variants={itemVariants} className="text-center lg:text-left mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Sign in to your account</h2>
-            <p className="text-slate-500 dark:text-slate-400 mt-2">Enter your credentials to access your family tree</p>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 dark:text-white">Sign in to your account</h2>
+            <p className="text-slate-500 dark:text-slate-300 mt-2">Enter your credentials to access your family tree</p>
           </motion.div>
 
           <motion.form
@@ -121,7 +121,7 @@ export default function Login() {
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input id="email" type="email" autoComplete="email" placeholder="you@example.com" {...register("email")}
-                  className={`w-full h-12 pl-11 pr-4 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all duration-200 outline-none ${errors.email ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
+                  className={`w-full h-12 pl-11 pr-4 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 dark:text-white transition-all duration-200 outline-none ${errors.email ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-600 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
               </div>
               <AnimatePresence>
                 {errors.email && (
@@ -139,9 +139,9 @@ export default function Login() {
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input id="password" type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="Enter your password" {...register("password")}
-                  className={`w-full h-12 pl-11 pr-12 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all duration-200 outline-none ${errors.password ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
+                  className={`w-full h-12 pl-11 pr-12 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 dark:text-white transition-all duration-200 outline-none ${errors.password ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-600 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
                 <button type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-300 dark:hover:text-slate-300 transition-colors"
                   aria-label={showPassword ? "Hide password" : "Show password"}>
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -160,7 +160,7 @@ export default function Login() {
             <motion.div variants={itemVariants} className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" {...register("remember")} className="w-4 h-4 rounded border-2 border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500/20 checked:bg-emerald-600 cursor-pointer" />
-                <span className="text-sm text-slate-600 dark:text-slate-400">Remember me for 30 days</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300">Remember me for 30 days</span>
               </label>
               <Link to="/forgot-password" className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors">Forgot password?</Link>
             </motion.div>
@@ -177,7 +177,7 @@ export default function Login() {
 
           {/* Divider */}
           <motion.div variants={itemVariants} className="relative my-8">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-slate-700" /></div>
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-slate-600" /></div>
             <div className="relative flex justify-center"><span className="px-4 text-sm text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900">Or continue with</span></div>
           </motion.div>
 
@@ -186,13 +186,13 @@ export default function Login() {
             {[{ icon: <GoogleIcon />, label: "Google" }, { icon: <ExternalLink className="w-5 h-5" />, label: "GitHub" }].map((btn) => (
               <motion.button key={btn.label} type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                 onClick={() => toast.info(`${btn.label} sign-in coming soon!`, { description: "We're working on social login integration." })}
-                className="w-full h-12 rounded-xl border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200 text-sm font-medium">
+                className="w-full h-12 rounded-xl border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center gap-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 transition-all duration-200 text-sm font-medium">
                 {btn.icon}<span>{btn.label}</span>
               </motion.button>
             ))}
           </motion.div>
 
-          <motion.p variants={itemVariants} className="text-center text-sm text-slate-500 dark:text-slate-400 mt-8">
+          <motion.p variants={itemVariants} className="text-center text-sm text-slate-500 dark:text-slate-300 mt-8">
             Don&apos;t have an account?{" "}
             <Link to="/register" className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline underline-offset-2 transition-all">Sign up for free</Link>
           </motion.p>

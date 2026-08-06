@@ -45,7 +45,7 @@ function ResendTimer({ cooldown, onResend, loading }) {
       type="button"
       disabled={!canResend || loading}
       onClick={() => { onResend(); setCountdown(RESEND_COOLDOWN); }}
-      className="btn btn-ghost btn-sm text-slate-500 dark:text-slate-400 gap-2 disabled:opacity-50"
+      className="btn btn-ghost btn-sm text-slate-500 dark:text-slate-300 gap-2 disabled:opacity-50"
     >
       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
       {canResend ? "Resend Email" : `Resend in ${countdown}s`}
@@ -126,13 +126,13 @@ export default function ForgotPassword() {
               </div>
             </div>
 
-            <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 mb-6 transition-colors" variants={itemVariants}>
+            <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-200 mb-6 transition-colors" variants={itemVariants}>
               <ArrowLeft className="w-4 h-4" /> Back to login
             </Link>
 
             <div variants={itemVariants}>
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Forgot Password?</h2>
-              <p className="text-slate-500 dark:text-slate-400 mt-2">Enter your email and we'll send you a link to reset your password.</p>
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 dark:text-white">Forgot Password?</h2>
+              <p className="text-slate-500 dark:text-slate-300 mt-2">Enter your email and we'll send you a link to reset your password.</p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 mt-8">
@@ -141,7 +141,7 @@ export default function ForgotPassword() {
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input id="email" type="email" autoComplete="email" placeholder="you@example.com" {...register("email")}
-                    className={`w-full h-12 pl-11 pr-4 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all duration-200 outline-none ${errors.email ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
+                    className={`w-full h-12 pl-11 pr-4 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 dark:text-white transition-all duration-200 outline-none ${errors.email ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-600 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
                 </div>
                 {errors.email && <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.email.message}</p>}
               </div>
@@ -154,7 +154,7 @@ export default function ForgotPassword() {
               </div>
             </form>
 
-            <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6 space-x-4" variants={itemVariants}>
+            <p className="text-center text-sm text-slate-500 dark:text-slate-300 mt-6 space-x-4" variants={itemVariants}>
               <Link to="/login" className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-medium hover:underline">Remember your password? Sign in</Link>
             </p>
           </div>
@@ -190,9 +190,9 @@ export default function ForgotPassword() {
           </div>
 
           <div variants={itemVariants}>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Check your email</h2>
-            <p className="text-slate-500 dark:text-slate-400 mt-3">We sent a password reset link to</p>
-            <p className="text-lg font-semibold text-slate-900 dark:text-white mt-1">{email}</p>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 dark:text-white">Check your email</h2>
+            <p className="text-slate-500 dark:text-slate-300 mt-3">We sent a password reset link to</p>
+            <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 dark:text-white mt-1">{email}</p>
           </div>
 
           {/* Info box */}
@@ -211,21 +211,21 @@ export default function ForgotPassword() {
           </div>
 
           <div variants={itemVariants}>
-            <button onClick={() => setStep(1)} className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 mt-4 transition-colors">
+            <button onClick={() => setStep(1)} className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-200 mt-4 transition-colors">
               Wrong email? Try again
             </button>
           </div>
 
           {/* Help section */}
-          <div className="mt-8 border-t border-slate-200 dark:border-slate-700 pt-4" variants={itemVariants}>
+          <div className="mt-8 border-t border-slate-200 dark:border-slate-600 pt-4" variants={itemVariants}>
             <button
               onClick={() => setShowHelp(!showHelp)}
-              className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 mx-auto transition-colors"
+              className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-200 mx-auto transition-colors"
             >
               Didn&apos;t receive the email? {showHelp ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
             {showHelp && (
-              <ul className="mt-3 text-left text-sm text-slate-500 dark:text-slate-400 space-y-2 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+              <ul className="mt-3 text-left text-sm text-slate-500 dark:text-slate-300 space-y-2 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
                 <li>• Check your spam or junk folder</li>
                 <li>• Make sure the email address is correct</li>
                 <li>• Add <span className="text-emerald-600">noreply@familytree.app</span> to your contacts</li>
@@ -234,7 +234,7 @@ export default function ForgotPassword() {
             )}
           </div>
 
-          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6" variants={itemVariants}>
+          <p className="text-center text-sm text-slate-500 dark:text-slate-300 mt-6" variants={itemVariants}>
             <Link to="/login" className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-medium hover:underline">Back to login</Link>
           </p>
         </div>

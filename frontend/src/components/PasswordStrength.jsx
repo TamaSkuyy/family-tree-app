@@ -43,7 +43,7 @@ export default function PasswordStrength({ password }) {
           />
         ))}
       </div>
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+      <p className="text-xs text-slate-500 dark:text-slate-300">
         Password strength:{" "}
         <span
           className={`font-medium ${

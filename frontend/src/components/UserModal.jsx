@@ -39,7 +39,7 @@ export default function UserModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded shadow-lg w-full max-w-lg p-6">
+      <div className="bg-white dark:bg-slate-800 rounded shadow-lg w-full max-w-lg p-6">
         <h3 className="text-lg font-semibold mb-4">
           {mode === "create" ? "Create user" : "Edit user"}
         </h3>

@@ -53,41 +53,41 @@ function UserFormModal({ mode, initial, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 flex items-center justify-between">
           <h2 className="text-lg font-bold text-white">{isEdit ? "Edit User" : "Create User"}</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/20 text-white transition-colors"><X className="w-5 h-5" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Name *</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Name *</label>
             <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" required />
+              className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 px-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Email *</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email *</label>
             <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" required />
+              className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 px-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               Password {isEdit ? "(leave blank to keep)" : "*"}
             </label>
             <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+              className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 px-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
               required={!isEdit} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Role</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Role</label>
             <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}
-              className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all">
+              className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 px-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all">
               <option value="user">User</option>
               <option value="admin">Admin</option>
             </select>
           </div>
           <div className="flex gap-3 justify-end pt-2">
             <button type="button" onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors">
+              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 dark:bg-slate-800/50 transition-colors">
               Cancel
             </button>
             <button type="submit" disabled={submitting}
@@ -155,8 +155,8 @@ export default function AdminUsers() {
     return (
       <div className="text-center py-20">
         <Shield className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-slate-900">Access Denied</h3>
-        <p className="text-slate-500 mt-1">You need admin privileges to view this page.</p>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Access Denied</h3>
+        <p className="text-slate-500 dark:text-slate-300 mt-1">You need admin privileges to view this page.</p>
       </div>
     );
   }
@@ -177,8 +177,8 @@ export default function AdminUsers() {
               <span className="ml-2 text-slate-300">users</span>
             </div>
             <button onClick={() => setModal({ mode: "create", initial: null })}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-slate-800
-                bg-white hover:bg-slate-100 shadow-lg transition-all duration-200">
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-slate-800 dark:text-white
+                bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 shadow-lg transition-all duration-200">
               <Plus className="w-4 h-4" /> Create User
             </button>
           </div>
@@ -202,10 +202,10 @@ export default function AdminUsers() {
       ) : users.length === 0 ? (
         /* Empty */
         <motion.div variants={itemV} initial="hidden" animate="visible"
-          className="text-center py-20 bg-white rounded-2xl border border-slate-200">
+          className="text-center py-20 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200">
           <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900">No users found</h3>
-          <p className="text-slate-500 mt-1 mb-6">Create your first user to get started</p>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">No users found</h3>
+          <p className="text-slate-500 dark:text-slate-300 mt-1 mb-6">Create your first user to get started</p>
           <button onClick={() => setModal({ mode: "create", initial: null })}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg shadow-emerald-500/25 transition-all">
             <Plus className="w-5 h-5" /> Create User
@@ -214,10 +214,10 @@ export default function AdminUsers() {
       ) : (
         /* Users Table */
         <motion.div variants={itemV} initial="hidden" animate="visible"
-          className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-600 overflow-hidden">
           {/* Table header */}
-          <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 border-b border-slate-200
-            text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700
+            text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wider">
             <div className="col-span-3">User</div>
             <div className="col-span-3">Email</div>
             <div className="col-span-2">Role</div>
@@ -226,11 +226,11 @@ export default function AdminUsers() {
           </div>
 
           {/* Rows */}
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
             {users.map((u) => (
               <div key={u.id}
                 className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-6 py-4 items-center
-                  hover:bg-slate-50 transition-colors">
+                  hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                 {/* Name + avatar */}
                 <div className="sm:col-span-3 flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600
@@ -238,7 +238,7 @@ export default function AdminUsers() {
                     {u.name?.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-900 text-sm">{u.name}</p>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{u.name}</p>
                     {u.id === user?.id && (
                       <span className="text-[10px] text-emerald-600 font-medium">(you)</span>
                     )}
@@ -246,8 +246,8 @@ export default function AdminUsers() {
                 </div>
 
                 {/* Email */}
-                <div className="sm:col-span-3 flex items-center gap-1.5 text-sm text-slate-600">
-                  <Mail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                <div className="sm:col-span-3 flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
+                  <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-300 flex-shrink-0" />
                   <span className="truncate">{u.email}</span>
                 </div>
 
@@ -259,30 +259,30 @@ export default function AdminUsers() {
                     disabled={roleUpdating === u.id}
                     className={`w-full sm:w-auto px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all outline-none
                       ${u.role === "admin"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : "bg-slate-50 text-slate-600 border-slate-200"}`}>
+                        ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                        : "bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600"}`}>
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
 
                 {/* Created */}
-                <div className="sm:col-span-2 flex items-center gap-1.5 text-sm text-slate-500">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                <div className="sm:col-span-2 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-300">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-300 flex-shrink-0" />
                   <span>{new Date(u.created_at).toLocaleDateString()}</span>
                 </div>
 
                 {/* Actions */}
                 <div className="sm:col-span-2 flex items-center justify-end gap-1.5">
                   <button onClick={() => setModal({ mode: "edit", initial: u })}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600
-                      hover:bg-slate-100 transition-colors">
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300
+                      hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                     Edit
                   </button>
                   {u.id !== user?.id && (
                     <button onClick={() => setDeleteTarget(u)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-red-600
-                        hover:bg-red-50 transition-colors">
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 dark:text-red-400
+                        hover:bg-red-50 dark:hover:bg-red-950 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}

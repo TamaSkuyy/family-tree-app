@@ -12,7 +12,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { personAPI } from "../services/api";
 import MemberCard from "./MemberCard";
 import ConfirmModal from "./ConfirmModal";
-import UserModal from "./UserModal";
+import PersonFormModal from "./PersonFormModal";
 import toast from "react-hot-toast";
 
 const itemV = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
@@ -28,17 +28,17 @@ const FILTERS = [
 // ── Skeleton ───────────────────────────────────────────────────────────
 function CardSkeleton() {
   return (
-    <div className="animate-pulse bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="animate-pulse bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-600 overflow-hidden">
       <div className="h-14 bg-slate-200" />
       <div className="flex justify-center -mt-9 z-10 relative">
         <div className="w-[72px] h-[72px] rounded-full bg-slate-300 border-4 border-white" />
       </div>
       <div className="px-5 pb-5 pt-3">
-        <div className="h-5 w-32 bg-slate-200 rounded mx-auto mb-2" />
-        <div className="h-4 w-20 bg-slate-100 rounded-full mx-auto" />
+        <div className="h-5 w-32 bg-slate-200 dark:bg-slate-600 rounded mx-auto mb-2" />
+        <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700 rounded-full mx-auto" />
         <div className="mt-4 space-y-2">
-          <div className="h-3 w-48 bg-slate-100 rounded" />
-          <div className="h-3 w-36 bg-slate-100 rounded" />
+          <div className="h-3 w-48 bg-slate-100 dark:bg-slate-700 rounded" />
+          <div className="h-3 w-36 bg-slate-100 dark:bg-slate-700 rounded" />
         </div>
       </div>
     </div>
@@ -60,7 +60,7 @@ function Pagination({ page, totalPages, prevPage, nextPage, goToPage }) {
     <div className="flex items-center justify-center gap-1.5 mt-10">
       <button onClick={prevPage} disabled={page === 1}
         className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border border-slate-200
-          disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 text-slate-600 transition-colors">
+          disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 transition-colors">
         <ChevronLeft className="w-4 h-4" /> Prev
       </button>
       {pages.map((p, i) => (
@@ -69,14 +69,14 @@ function Pagination({ page, totalPages, prevPage, nextPage, goToPage }) {
         ) : (
           <button key={p} onClick={() => goToPage(p)}
             className={`w-10 h-10 rounded-lg text-sm font-medium transition-all
-              ${page === p ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20" : "text-slate-600 hover:bg-slate-100"}`}>
+              ${page === p ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100"}`}>
             {p}
           </button>
         )
       ))}
       <button onClick={nextPage} disabled={page === totalPages}
         className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border border-slate-200
-          disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 text-slate-600 transition-colors">
+          disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 transition-colors">
         Next <ChevronRight className="w-4 h-4" />
       </button>
     </div>
@@ -149,8 +149,8 @@ export default function PersonList() {
         <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
           <X className="w-8 h-8 text-red-500" />
         </div>
-        <h3 className="text-lg font-semibold text-slate-900">Failed to load members</h3>
-        <p className="text-slate-500 mt-1 mb-4">{error}</p>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Failed to load members</h3>
+        <p className="text-slate-500 dark:text-slate-300 mt-1 mb-4">{error}</p>
         <button onClick={refetch} className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors">Try Again</button>
       </div>
     );
@@ -198,15 +198,15 @@ export default function PersonList() {
             <Users className="w-6 h-6 text-emerald-600" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Family Members</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Family Members</h2>
             <p className="text-sm text-slate-500">{filteredPersons.length} member{filteredPersons.length !== 1 ? "s" : ""} in your tree</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center bg-slate-100 rounded-xl p-1">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-700 rounded-xl p-1">
             {[{ mode: "grid", icon: LayoutGrid }, { mode: "tree", icon: TreePine }].map(({ mode, icon: Icon }) => (
               <button key={mode} onClick={() => setViewMode(mode)}
-                className={`p-2 rounded-lg transition-all ${viewMode === mode ? "bg-white shadow-sm text-emerald-600" : "text-slate-500 hover:text-slate-700"}`}>
+                className={`p-2 rounded-lg transition-all ${viewMode === mode ? "bg-white dark:bg-slate-800 shadow-sm text-emerald-600" : "text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:text-slate-300"}`}>
                 <Icon className="w-4 h-4" />
               </button>
             ))}
@@ -222,16 +222,16 @@ export default function PersonList() {
           SEARCH + FILTERS (light theme)
           ══════════════════════════════════════════════════════════════ */}
       <motion.div variants={itemV} initial="hidden" animate="visible" transition={{ delay: 0.1 }}
-        className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-8">
+        className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-600 p-4 mb-8">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, or relationship..."
-            className="w-full h-12 pl-11 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-900
-              placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" />
+            className="w-full h-12 pl-11 pr-10 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 text-slate-900
+              placeholder:text-slate-400 dark:text-slate-300 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+            <button onClick={() => setSearch("")} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-300 transition-colors">
               <X className="w-5 h-5" />
             </button>
           )}
@@ -244,7 +244,7 @@ export default function PersonList() {
               className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
                 ${activeFilter === f.key
                   ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                  : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200"}`}>
               {f.label}
             </button>
           ))}
@@ -261,15 +261,15 @@ export default function PersonList() {
           </div>
           {search || activeFilter !== "all" ? (
             <>
-              <h3 className="text-xl font-bold text-slate-900">No members found</h3>
-              <p className="text-slate-500 mt-1.5 mb-6">Try adjusting your search or filters</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">No members found</h3>
+              <p className="text-slate-500 dark:text-slate-300 mt-1.5 mb-6">Try adjusting your search or filters</p>
               <button onClick={() => { setSearch(""); setActiveFilter("all"); }}
-                className="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-600 font-medium hover:bg-slate-200 transition-colors">Clear filters</button>
+                className="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 transition-colors">Clear filters</button>
             </>
           ) : (
             <>
-              <h3 className="text-xl font-bold text-slate-900">No family members yet</h3>
-              <p className="text-slate-500 mt-1.5 mb-6">Start building your family tree by adding your first member</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">No family members yet</h3>
+              <p className="text-slate-500 dark:text-slate-300 mt-1.5 mb-6">Start building your family tree by adding your first member</p>
               <button onClick={handleAdd}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 transition-all">
                 <UserPlus className="w-5 h-5" /> Add Your First Member
@@ -290,9 +290,9 @@ export default function PersonList() {
         </>
       ) : (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="text-center py-12 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          className="text-center py-12 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm">
           <TreePine className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
-          <p className="text-slate-500 mb-4">Select a member to view their family tree</p>
+          <p className="text-slate-500 dark:text-slate-300 mb-4">Select a member to view their family tree</p>
           {filteredPersons[0] && (
             <Link to={`/family-tree/${filteredPersons[0].id}`} className="text-emerald-600 hover:underline font-medium">
               View {filteredPersons[0].first_name}&apos;s tree →
@@ -305,7 +305,7 @@ export default function PersonList() {
           MODALS
           ══════════════════════════════════════════════════════════════ */}
       {showAddModal && (
-        <UserModal
+        <PersonFormModal
           person={editingPerson}
           onClose={() => { setShowAddModal(false); setEditingPerson(null); }}
           onSaved={() => { setShowAddModal(false); setEditingPerson(null); refetch(); }}

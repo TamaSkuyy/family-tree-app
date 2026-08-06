@@ -77,7 +77,7 @@ export default function Register() {
     } finally { setIsSubmitting(false); }
   }, [login, navigate]);
 
-  const inputClass = (err) => `w-full h-12 pl-11 pr-12 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all duration-200 outline-none ${err ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`;
+  const inputClass = (err) => `w-full h-12 pl-11 pr-12 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 dark:text-white transition-all duration-200 outline-none ${err ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-600 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`;
 
   return (
     <div className="min-h-screen flex">
@@ -97,8 +97,8 @@ export default function Register() {
           </motion.div>
 
           <motion.div variants={itemVariants} className="text-center lg:text-left mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Create your account</h2>
-            <p className="text-slate-500 dark:text-slate-400 mt-2">Start building your family tree in minutes</p>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 dark:text-white">Create your account</h2>
+            <p className="text-slate-500 dark:text-slate-300 mt-2">Start building your family tree in minutes</p>
           </motion.div>
 
           <motion.form key={shakeKey}
@@ -129,7 +129,7 @@ export default function Register() {
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Password</label>
               <div className="relative"><Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input id="password" type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="Create a strong password" {...register("password")} className={inputClass(errors.password)} />
-                <button type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                <button type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-300 dark:hover:text-slate-300 transition-colors">
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
@@ -142,7 +142,7 @@ export default function Register() {
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Confirm Password</label>
               <div className="relative"><Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input id="confirmPassword" type={showConfirm ? "text" : "password"} autoComplete="new-password" placeholder="Re-enter your password" {...register("confirmPassword")} className={inputClass(errors.confirmPassword)} />
-                <button type="button" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                <button type="button" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-300 dark:hover:text-slate-300 transition-colors">
                   {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
@@ -153,7 +153,7 @@ export default function Register() {
             <motion.div variants={itemVariants}>
               <label className="flex items-start gap-2 cursor-pointer select-none">
                 <input type="checkbox" {...register("terms")} className="mt-0.5 w-4 h-4 rounded border-2 border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500/20 checked:bg-emerald-600 cursor-pointer" />
-                <span className="text-sm text-slate-600 dark:text-slate-400">I agree to the <span className="text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer hover:underline">Terms of Service</span> and <span className="text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer hover:underline">Privacy Policy</span></span>
+                <span className="text-sm text-slate-600 dark:text-slate-300">I agree to the <span className="text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer hover:underline">Terms of Service</span> and <span className="text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer hover:underline">Privacy Policy</span></span>
               </label>
               <AnimatePresence>{errors.terms && <motion.p initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-red-500 text-xs mt-1.5 ml-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.terms.message}</motion.p>}</AnimatePresence>
             </motion.div>
@@ -169,7 +169,7 @@ export default function Register() {
 
           {/* Divider */}
           <motion.div variants={itemVariants} className="relative my-6">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-slate-700" /></div>
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-slate-600" /></div>
             <div className="relative flex justify-center"><span className="px-4 text-sm text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-900">Or sign up with</span></div>
           </motion.div>
 
@@ -178,13 +178,13 @@ export default function Register() {
             {[{ icon: <GoogleIcon />, label: "Google" }, { icon: <ExternalLink className="w-5 h-5" />, label: "GitHub" }].map((btn) => (
               <motion.button key={btn.label} type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                 onClick={() => toast.info(`${btn.label} sign-up coming soon!`, { description: "We're working on social login integration." })}
-                className="w-full h-12 rounded-xl border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200 text-sm font-medium">
+                className="w-full h-12 rounded-xl border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center gap-2.5 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 transition-all duration-200 text-sm font-medium">
                 {btn.icon}<span>{btn.label}</span>
               </motion.button>
             ))}
           </motion.div>
 
-          <motion.p variants={itemVariants} className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+          <motion.p variants={itemVariants} className="text-center text-sm text-slate-500 dark:text-slate-300 mt-6">
             Already have an account?{" "}<Link to="/login" className="font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline underline-offset-2 transition-all">Sign in</Link>
           </motion.p>
         </motion.div>

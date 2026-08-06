@@ -122,7 +122,35 @@ func (s *PersonService) GetFamilyTree(rootID uuid.UUID) (*models.Person, error) 
 		return nil, err
 	}
 	root.PopulateComputed()
+	s.populateSiblings(&root)
 	return &root, nil
+}
+
+// populateSiblings finds people who share at least one parent with this person.
+func (s *PersonService) populateSiblings(p *models.Person) {
+	if len(p.Parents) == 0 {
+		return
+	}
+	parentIDs := make([]string, 0, len(p.Parents))
+	for _, parent := range p.Parents {
+		parentIDs = append(parentIDs, parent.ID.String())
+	}
+	var rels []models.ParentChild
+	database.DB.Preload("Child").Where("parent_id IN ? AND child_id != ?", parentIDs, p.ID.String()).Find(&rels)
+	seen := make(map[string]bool)
+	spouseIDs := make(map[string]bool)
+	for _, s := range p.Spouses {
+		spouseIDs[s.ID.String()] = true
+	}
+	p.Siblings = make([]models.Person, 0)
+	for _, rel := range rels {
+		id := rel.Child.ID.String()
+		if seen[id] || spouseIDs[id] {
+			continue
+		}
+		seen[id] = true
+		p.Siblings = append(p.Siblings, rel.Child)
+	}
 }
 
 func (s *PersonService) SearchPersons(query string) ([]models.Person, error) {

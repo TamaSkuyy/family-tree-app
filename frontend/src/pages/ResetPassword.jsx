@@ -102,8 +102,8 @@ export default function ResetPassword() {
               </div>
             </div>
             <div variants={itemVariants}>
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Link expired or invalid</h2>
-              <p className="text-slate-500 dark:text-slate-400 mt-3">This password reset link has expired or is invalid. Please request a new one.</p>
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 dark:text-white">Link expired or invalid</h2>
+              <p className="text-slate-500 dark:text-slate-300 mt-3">This password reset link has expired or is invalid. Please request a new one.</p>
             </div>
             <div variants={itemVariants} className="mt-8">
               <Link to="/forgot-password"
@@ -138,8 +138,8 @@ export default function ResetPassword() {
               </div>
             </div>
             <div variants={itemVariants}>
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Password Reset!</h2>
-              <p className="text-slate-500 dark:text-slate-400 mt-3">Your password has been successfully reset. You can now sign in with your new password.</p>
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 dark:text-white">Password Reset!</h2>
+              <p className="text-slate-500 dark:text-slate-300 mt-3">Your password has been successfully reset. You can now sign in with your new password.</p>
             </div>
             <div variants={itemVariants} className="mt-8">
               <Link to="/login"
@@ -147,7 +147,7 @@ export default function ResetPassword() {
                 Continue to Login <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
-            <p className="text-sm text-slate-400 mt-4" variants={itemVariants}>
+            <p className="text-sm text-slate-400 dark:text-slate-300 mt-4" variants={itemVariants}>
               Redirecting to login shortly...
             </p>
           </div>
@@ -168,7 +168,7 @@ export default function ResetPassword() {
         <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white dark:bg-slate-900">
           <div className="text-center">
             <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">No reset token provided</h2>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 dark:text-white">No reset token provided</h2>
             <Link to="/forgot-password" className="text-emerald-600 hover:underline mt-4 inline-block">Request a new link</Link>
           </div>
         </div>
@@ -201,8 +201,8 @@ export default function ResetPassword() {
           </div>
 
           <div variants={itemVariants}>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Create new password</h2>
-            <p className="text-slate-500 dark:text-slate-400 mt-2">Your new password must be different from previous passwords.</p>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 dark:text-white">Create new password</h2>
+            <p className="text-slate-500 dark:text-slate-300 mt-2">Your new password must be different from previous passwords.</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 mt-8">
@@ -212,9 +212,9 @@ export default function ResetPassword() {
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input id="password" type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="Create a strong password" {...register("password")}
-                  className={`w-full h-12 pl-11 pr-12 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all duration-200 outline-none ${errors.password ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
+                  className={`w-full h-12 pl-11 pr-12 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 dark:text-white transition-all duration-200 outline-none ${errors.password ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-600 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
                 <button type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-300 dark:hover:text-slate-300 transition-colors"
                   aria-label={showPassword ? "Hide password" : "Show password"}>
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -229,9 +229,9 @@ export default function ResetPassword() {
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input id="confirmPassword" type={showConfirm ? "text" : "password"} autoComplete="new-password" placeholder="Re-enter your new password" {...register("confirmPassword")}
-                  className={`w-full h-12 pl-11 pr-12 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all duration-200 outline-none ${errors.confirmPassword ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
+                  className={`w-full h-12 pl-11 pr-12 rounded-xl border-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 dark:text-white transition-all duration-200 outline-none ${errors.confirmPassword ? "border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10" : "border-slate-200 dark:border-slate-600 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"}`} />
                 <button type="button" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-300 dark:hover:text-slate-300 transition-colors"
                   aria-label={showConfirm ? "Hide password" : "Show password"}>
                   {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>

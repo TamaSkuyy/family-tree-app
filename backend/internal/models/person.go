@@ -37,6 +37,7 @@ type Person struct {
 	Parents  []Person `gorm:"-" json:"parents,omitempty"`
 	Children []Person `gorm:"-" json:"children,omitempty"`
 	Spouses  []Person `gorm:"-" json:"spouses,omitempty"`
+	Siblings []Person `gorm:"-" json:"siblings,omitempty"`
 }
 
 // PopulateComputed fills the intuitive Parents/Children/Spouses fields

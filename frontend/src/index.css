@@ -3,6 +3,9 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+/* Class-based dark mode (toggle via JS) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer utilities {
   /* ── Fade in + slide up ─────────────────────────────────────────── */
   @keyframes fadeInUp {
