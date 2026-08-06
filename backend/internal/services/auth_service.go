@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"log"
 	"os"
 	"time"
 
@@ -147,6 +148,54 @@ func (s *AuthService) CreateUser(name, email, password, role string) (*models.Us
         return nil, err
     }
     return user, nil
+}
+
+// ForgotPassword generates a reset token and logs it (mock email)
+func (s *AuthService) ForgotPassword(email string) error {
+	var user models.User
+	if err := database.DB.First(&user, "email = ?", email).Error; err != nil {
+		log.Printf("[FORGOT-PASSWORD] Request for email: %s (user not found)", email)
+		return nil
+	}
+
+	resetToken, err := s.GenerateToken(&user)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("══════════════════════════════════════════")
+	log.Printf("📧 PASSWORD RESET FOR: %s (%s)", user.Name, user.Email)
+	log.Printf("🔗 RESET LINK: http://localhost:3000/reset-password?token=%s", resetToken)
+	log.Printf("⏰ Token expires in 24 hours")
+	log.Printf("══════════════════════════════════════════")
+
+	return nil
+}
+
+// ResetPassword validates the reset token and updates the password
+func (s *AuthService) ResetPassword(tokenStr, newPassword string) error {
+	parsed, err := s.ParseToken(tokenStr)
+	if err != nil || !parsed.Valid {
+		return errors.New("invalid or expired reset token")
+	}
+
+	claims, ok := parsed.Claims.(jwt.MapClaims)
+	if !ok {
+		return errors.New("invalid token claims")
+	}
+
+	sub, ok := claims["sub"].(string)
+	if !ok || sub == "" {
+		return errors.New("invalid subject in token")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return database.DB.Model(&models.User{}).Where("id = ?", sub).
+		Update("password_hash", string(hash)).Error
 }
 
 // DeleteUser deletes a user by id

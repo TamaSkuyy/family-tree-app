@@ -9,7 +9,7 @@ export default function ProtectedRoute({ children }) {
   if (loading)
     return (
       <div className="w-full h-48 flex items-center justify-center">
-        <button className="btn loading btn-ghost">Loading</button>
+        <span className="loading loading-spinner loading-lg" />
       </div>
     );
 

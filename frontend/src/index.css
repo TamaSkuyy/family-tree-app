@@ -4,3 +4,62 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  /* ── Fade in + slide up ─────────────────────────────────────────── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Slide from left ────────────────────────────────────────────── */
+  @keyframes slideFromLeft {
+    from { opacity: 0; transform: translateX(-60px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── Slide from right ───────────────────────────────────────────── */
+  @keyframes slideFromRight {
+    from { opacity: 0; transform: translateX(60px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── Shake on error ─────────────────────────────────────────────── */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%      { transform: translateX(-10px); }
+    30%      { transform: translateX(10px); }
+    50%      { transform: translateX(-10px); }
+    70%      { transform: translateX(10px); }
+    85%      { transform: translateX(-5px); }
+    95%      { transform: translateX(5px); }
+  }
+
+  /* ── Slow floating for orbs ─────────────────────────────────────── */
+  @keyframes floatSlow {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-30px) scale(1.1); }
+  }
+
+  @keyframes floatSlower {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(40px) scale(1.15); }
+  }
+
+  @keyframes floatMedium {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    50%      { transform: translateY(-25px) translateX(15px); }
+  }
+
+  @keyframes pulseSlow {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.2); }
+  }
+}
+
+/* ── Utility classes for animations ──────────────────────────────────── */
+.animate-fade-in-up   { animation: fadeInUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.animate-float-slow   { animation: floatSlow 8s ease-in-out infinite; }
+.animate-float-slower { animation: floatSlower 10s ease-in-out infinite; }
+.animate-float-medium { animation: floatMedium 6s ease-in-out infinite; }
+.animate-pulse-slow   { animation: pulseSlow 7s ease-in-out infinite; }

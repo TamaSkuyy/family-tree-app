@@ -29,6 +29,22 @@ curl http://localhost:8080/health
 
 # Production build
 ./deploy-production.sh         # build artefacts to build/
+
+# Tests
+cd backend
+go test $(go list ./... | grep -v /cmd) -v
+go test $(go list ./... | grep -v /cmd) -coverprofile=coverage.out
+go tool cover -html=coverage.out
+
+# Docker (production)
+docker compose up -d --build    # start on :80
+docker compose down             # stop
+
+# Docker (development)
+docker compose -f docker-compose.dev.yml up --build   # backend :8080, frontend :3000
+
+# Swagger UI
+open http://localhost:8080/swagger/index.html
 ```
 
 ## Architecture

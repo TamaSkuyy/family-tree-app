@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -72,6 +72,8 @@ export const authAPI = {
     register: (data) => api.post('/auth/register', data),
     login: (data) => api.post('/auth/login', data),
     me: () => api.get('/auth/me'),
+    forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+    resetPassword: (token, new_password) => api.post('/auth/reset-password', { token, new_password }),
 };
 
 // Admin APIs

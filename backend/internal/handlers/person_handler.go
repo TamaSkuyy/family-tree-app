@@ -55,6 +55,10 @@ type SpouseRequest struct {
 	Person2ID string `json:"person2_id" binding:"required"`
 }
 
+// @Summary      List all persons
+// @Tags         persons
+// @Produce      json
+// @Router       /persons [get]
 // Get all persons
 func (h *PersonHandler) GetPersons(c *gin.Context) {
 	persons, err := h.service.GetAllPersons()
@@ -81,6 +85,13 @@ func (h *PersonHandler) GetPerson(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": person})
 }
 
+// @Summary      Create a new person
+// @Tags         persons
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        body body CreatePersonRequest true "Person data"
+// @Router       /persons [post]
 // Create new person
 func (h *PersonHandler) CreatePerson(c *gin.Context) {
 	var req CreatePersonRequest

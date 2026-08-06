@@ -1,0 +1,24 @@
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      - ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - PUBLIC_MODE=${PUBLIC_MODE:-false}
+    volumes:
+      - ./data:/data
+    working_dir: /data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-80}:80"
+    depends_on:
+      - backend
