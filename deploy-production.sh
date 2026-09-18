@@ -80,6 +80,10 @@ log "JWT_SECRET: OK (${#JWT_SECRET} chars)"
 command -v go   >/dev/null 2>&1 || { err "Go tidak ditemukan. Install Go 1.21+."; exit 1; }
 command -v node >/dev/null 2>&1 || { err "Node.js tidak ditemukan. Install Node.js 16+."; exit 1; }
 command -v npm  >/dev/null 2>&1 || { err "npm tidak ditemukan."; exit 1; }
+# gorm.io/driver/sqlite memakai github.com/mattn/go-sqlite3 yang butuh CGO.
+# Tanpa gcc, build akan gagal; dengan CGO_ENABLED=0 binary-nya jalan tapi SQLite
+# langsung error saat start ("go-sqlite3 requires cgo to work").
+command -v gcc  >/dev/null 2>&1 || { err "gcc tidak ditemukan (dibutuhkan go-sqlite3 via CGO). Install build-essential / gcc."; exit 1; }
 
 # ── Build ─────────────────────────────────────────────────────────────────
 echo -e "${CYAN}"
@@ -93,14 +97,20 @@ rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}"
 
 # --- Build Go backend ---
+# CGO_ENABLED=1 wajib (SQLite). Karena itu build ini TIDAK cross-compile: jalankan
+# di host linux/amd64 dengan gcc, atau pakai Docker (docker-compose.prod.yml) yang
+# jadi jalur yang direkomendasikan.
 log "Building Go backend binary..."
 (
   cd backend
-  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+  CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
     go build -ldflags="-s -w" -o "../${BUILD_DIR}/${BACKEND_BINARY}" ./cmd/main.go
+  CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
+    go build -ldflags="-s -w" -o "../${BUILD_DIR}/family-tree-createadmin" ./cmd/createadmin.go
 )
 BACKEND_SIZE=$(du -h "${BUILD_DIR}/${BACKEND_BINARY}" | cut -f1)
 success "Backend binary: ${BUILD_DIR}/${BACKEND_BINARY} (${BACKEND_SIZE})"
+success "Admin CLI:      ${BUILD_DIR}/family-tree-createadmin"
 
 # --- Build React frontend ---
 log "Building React frontend (Vite)..."

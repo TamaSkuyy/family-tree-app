@@ -139,19 +139,43 @@ frontend/                   React 18 / Vite / Tailwind + daisyUI
 | `./dev-local.sh --stop` | Stop all processes |
 | `./dev-local.sh go [args]` | Run go commands in backend/ |
 | `./dev-local.sh npm [args]` | Run npm commands in frontend/ |
-| `./deploy-production.sh` | Build production artefacts to `build/` |
+| `./deploy-production.sh` | Build production artefacts to `build/` (needs gcc, see below) |
+| `./install-vps.sh` | One-shot VPS install: Docker + HTTPS + admin account |
 
-## 🐳 Docker (Production)
+## 🚀 Deploy to a VPS (Docker + automatic HTTPS)
+
+See **[DEPLOY_VPS.md](DEPLOY_VPS.md)** for the full walkthrough. Short version, on the VPS:
 
 ```bash
-# Build and start
-docker compose up -d --build
+sudo ./install-vps.sh --domain family.example.com --email you@example.com
+```
+
+That installs Docker, writes `.env`, builds the stack, obtains a Let's Encrypt
+certificate via Caddy, and creates the first admin account.
+
+```bash
+# Manual equivalent (no automatic HTTPS, serves plain :80)
+docker compose -f docker-compose.prod.yml up -d --build
 
 # Stop
+docker compose -f docker-compose.prod.yml down
+```
+
+## 🐳 Docker (simple, HTTP only)
+
+```bash
+docker compose up -d --build   # frontend on :80, backend proxied through nginx
 docker compose down
 ```
 
-Frontend on `:80`, backend proxied through nginx.
+Frontend on `:80`, backend proxied through nginx. Use `docker-compose.prod.yml`
+instead when you have a domain and want TLS.
+
+> **Note:** the SQLite driver (`gorm.io/driver/sqlite` → `mattn/go-sqlite3`) needs
+> CGO, so the backend image is built on Debian with `CGO_ENABLED=1`. Building with
+> `CGO_ENABLED=0` compiles a stub that fails at startup with *"go-sqlite3 requires
+> cgo to work"*, and building on Alpine/musl fails with *"unknown type name
+> 'off64_t'"*.
 
 ## 🔑 Environment Variables
 
@@ -159,6 +183,10 @@ Frontend on `:80`, backend proxied through nginx.
 ENV=production            # Set to 'production' for strict JWT_SECRET check
 JWT_SECRET=<secret>       # Required, min 16 chars in production
 PUBLIC_MODE=true          # Optional: allow read-only access without login
+
+# Used by docker-compose.prod.yml (written automatically by install-vps.sh)
+DOMAIN=family.example.com # Domain(s) served with HTTPS, comma-separated
+ACME_EMAIL=you@example.com # Contact address for Let's Encrypt
 ```
 
 ## 🧪 Testing

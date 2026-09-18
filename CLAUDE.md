@@ -27,7 +27,7 @@ curl http://localhost:8080/health
 ./dev-local.sh go [args...]    # run arbitrary go command in backend/
 ./dev-local.sh npm [args...]   # run arbitrary npm command in frontend/
 
-# Production build
+# Production build (needs gcc: the SQLite driver requires CGO)
 ./deploy-production.sh         # build artefacts to build/
 
 # Tests
@@ -36,7 +36,12 @@ go test $(go list ./... | grep -v /cmd) -v
 go test $(go list ./... | grep -v /cmd) -coverprofile=coverage.out
 go tool cover -html=coverage.out
 
-# Docker (production)
+# Docker (production, HTTPS via Caddy — see DEPLOY_VPS.md)
+./install-vps.sh --domain example.com --email you@example.com   # one-shot VPS install
+docker compose -f docker-compose.prod.yml up -d --build        # manual, no TLS
+docker compose -f docker-compose.prod.yml logs -f
+
+# Docker (production, plain :80 behind the bundled nginx)
 docker compose up -d --build    # start on :80
 docker compose down             # stop
 
@@ -52,7 +57,7 @@ open http://localhost:8080/swagger/index.html
 **Backend** follows a three-layer pattern:
 
 ```
-cmd/          → entry points (main server, seed data)
+cmd/          → entry points (main server, seed data, admin CLI); each file is its own program, so build with `go build ./cmd/main.go` — `go build ./...` fails because cmd/ has several `func main`
 handlers/     → HTTP layer: request DTOs, validation (Gin binding tags), JSON serialization, HTTP status
 services/     → business logic: DB operations, relationship rules, JWT token generation/parsing
 models/       → GORM models: Person, ParentChild, Spouse, User (all UUID PKs via BeforeCreate hook)
@@ -90,3 +95,7 @@ services/api.js → axios instance with interceptors (auto-attach token, 401 →
 - **CORS**: configured for `localhost:3000` and `127.0.0.1:3000` only.
 - **No tests exist yet** — the frontend test script is a no-op stub.
 - **User role** is a string enum: `"user"` or `"admin"`.
+- **SQLite needs CGO**: `gorm.io/driver/sqlite` uses `mattn/go-sqlite3`. Build with `CGO_ENABLED=1` (and gcc). `CGO_ENABLED=0` compiles a stub that dies at startup with *"go-sqlite3 requires cgo to work"*. The Docker image therefore builds on Debian/glibc, not Alpine/musl (`off64_t` is missing on musl).
+- **Frontend API base URL**: production builds use `VITE_API_BASE_URL=/api/v1` from `frontend/.env.production` (same-origin through the reverse proxy). The `http://localhost:8080/api/v1` default in `services/api.js` is only a dev fallback — an absolute localhost URL in a production bundle breaks every visitor.
+- **First admin in production**: public registration always creates role `"user"`, so use the CLI (`family-tree-createadmin` in Docker, or `go run cmd/createadmin.go`) instead of `cmd/seed.go`, which also inserts demo family data.
+- **CORS** only lists localhost origins; production works because browsers talk to the same origin and nginx/Caddy proxy `/api/*` to the backend. Adding a separate API hostname would require updating `cmd/main.go`.

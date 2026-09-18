@@ -1,0 +1,10 @@
+# node_modules is reinstalled inside the image via `npm ci`; copying it makes
+# the build context ~300MB and can leak host-specific native binaries.
+node_modules
+dist
+.git
+.gitignore
+.env.local
+.env.*.local
+*.log
+.DS_Store

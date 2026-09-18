@@ -1,0 +1,85 @@
+# Production stack: Caddy (automatic HTTPS) -> frontend (nginx, static + /api proxy) -> backend (Go + SQLite).
+#
+# Usage (from the repository root, with a .env file next to this file):
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Required variables in .env: DOMAIN, ACME_EMAIL, JWT_SECRET
+# Optional: PUBLIC_MODE (true allows anonymous read-only access)
+#
+# NOTE: this file intentionally does not publish the frontend or backend ports on
+# the host. Only Caddy is reachable from the internet (80/443), which keeps the
+# API and the raw HTTP backend off the public interface.
+
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      - ENV=production
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
+      - PUBLIC_MODE=${PUBLIC_MODE:-false}
+    volumes:
+      # SQLite lives in the container working directory (/data), so this bind mount
+      # is both the database and the backup surface: ./data/family_tree.db
+      - ./data:/data
+    working_dir: /data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ft-internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - ft-internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - DOMAIN=${DOMAIN:?DOMAIN must be set in .env}
+      - ACME_EMAIL=${ACME_EMAIL:?ACME_EMAIL must be set in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - ft-internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  caddy_data: # stores issued TLS certificates — do not delete, or you may hit ACME rate limits
+  caddy_config:
+
+networks:
+  ft-internal:
+    driver: bridge

@@ -1,0 +1,23 @@
+# Caddy reverse proxy for the Family Tree app.
+#
+# DOMAIN and ACME_EMAIL come from .env (see docker-compose.prod.yml). Caddy
+# obtains and renews a Let's Encrypt certificate automatically as soon as the
+# domain's DNS A/AAAA record points at this server and ports 80/443 are open.
+#
+# DOMAIN may hold several hostnames, e.g. DOMAIN=example.com,www.example.com
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# API traffic goes straight to the backend (no double proxy hop).
+	@backend path /api/* /health /swagger/*
+	reverse_proxy @backend backend:8080
+
+	# Everything else is the React SPA served by nginx, which falls back to
+	# index.html so client-side routes survive a hard refresh.
+	reverse_proxy frontend:80
+}

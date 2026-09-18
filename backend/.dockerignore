@@ -1,0 +1,11 @@
+# Keep the build context small and never bake local state into the image.
+.git
+.gitignore
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+build/
+coverage.out
+*.md
+.DS_Store
