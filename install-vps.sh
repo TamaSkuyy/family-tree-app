@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Family Tree App — VPS installer (Ubuntu 22.04/24.04 & Debian 12)
+# Family Tree App — VPS installer (Ubuntu 22.04/24.04+ & Debian 12)
 #
 # One-shot production install:
 #   * installs Docker Engine + Compose plugin (official Docker apt repo)
 #   * generates a strong JWT_SECRET and writes .env (chmod 600)
-#   * builds the backend, frontend and Caddy reverse proxy
-#   * obtains a Let's Encrypt certificate automatically (via Caddy)
+#   * builds the backend + frontend
+#   * serves HTTPS either through a bundled Caddy container (default) or through
+#     an nginx that is already running on the VPS (--behind-nginx)
 #   * creates the first admin account
 #
 # Typical usage on the VPS, from inside the repository:
 #   sudo ./install-vps.sh --domain family.example.com --email you@example.com
+#
+# If ports 80/443 are already taken by your own nginx/apache:
+#   sudo ./install-vps.sh --behind-nginx --port 8080 --install-nginx-vhost \
+#        --domain family.example.com --email you@example.com
 #
 # Non-interactive:
 #   sudo ./install-vps.sh --domain example.com --email me@example.com \
@@ -21,7 +26,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-COMPOSE_FILE="docker-compose.prod.yml"
+COMPOSE_FILE="docker-compose.prod.yml"        # Caddy mode (TLS in a container)
+NGINX_COMPOSE_FILE="docker-compose.nginx.yml" # --behind-nginx mode (host nginx)
+NGINX_TEMPLATE="deploy/nginx-family-tree.conf"
 ENV_FILE=".env"
 DATA_DIR="data"
 
@@ -53,6 +60,13 @@ Options:
   --admin-password <pass>  Password of the first admin account (min 8 chars).
   --admin-name <name>      Display name of the first admin account.
   --public-mode            Allow anonymous read-only access to the tree.
+  --behind-nginx           Use the nginx already running on this VPS instead of the
+                           bundled Caddy container. The app is published on
+                           127.0.0.1:<port> and your nginx proxies to it.
+  --port <n>               Host port for the app in --behind-nginx mode (default 8080).
+  --install-nginx-vhost    In --behind-nginx mode, write the server block into
+                           /etc/nginx, test it, and reload nginx (with backup/rollback).
+  --skip-certbot           Do not try to obtain a certificate with certbot.
   --dir <path>             Install directory when cloning (default: /opt/family-tree).
   --repo-url <url>         Clone the repository here if it is not present locally.
   --branch <name>          Branch to clone (default: main).
@@ -68,6 +82,9 @@ Options:
 Examples:
   sudo ./install-vps.sh --domain family.example.com --email me@example.com
   sudo ./install-vps.sh --domain example.com,www.example.com --email me@example.com --public-mode
+  # Ports 80/443 already used by your own nginx:
+  sudo ./install-vps.sh --behind-nginx --port 8080 --install-nginx-vhost \
+       --domain family.example.com --email me@example.com
 EOF
 }
 
@@ -79,6 +96,11 @@ ADMIN_PASSWORD=""
 ADMIN_NAME=""
 PUBLIC_MODE="false"
 PUBLIC_MODE_SET="false"
+BEHIND_NGINX="false"
+APP_PORT="8080"
+APP_PORT_SET="false"
+INSTALL_VHOST="false"
+SKIP_CERTBOT="false"
 INSTALL_DIR="/opt/family-tree"
 REPO_URL=""
 BRANCH="main"
@@ -97,6 +119,10 @@ while [ $# -gt 0 ]; do
     --admin-password) ADMIN_PASSWORD="${2:-}"; shift 2 ;;
     --admin-name)     ADMIN_NAME="${2:-}"; shift 2 ;;
     --public-mode)    PUBLIC_MODE="true"; PUBLIC_MODE_SET="true"; shift ;;
+    --behind-nginx)   BEHIND_NGINX="true"; shift ;;
+    --port)           APP_PORT="${2:-}"; APP_PORT_SET="true"; shift 2 ;;
+    --install-nginx-vhost) INSTALL_VHOST="true"; shift ;;
+    --skip-certbot)   SKIP_CERTBOT="true"; shift ;;
     --dir)            INSTALL_DIR="${2:-}"; shift 2 ;;
     --repo-url)       REPO_URL="${2:-}"; shift 2 ;;
     --branch)         BRANCH="${2:-}"; shift 2 ;;
@@ -110,6 +136,18 @@ while [ $# -gt 0 ]; do
     *)                err "Unknown option: $1"; usage; exit 1 ;;
   esac
 done
+
+# ── Validate mode-specific options ────────────────────────────────────────────
+if [ "$INSTALL_VHOST" = "true" ] && [ "$BEHIND_NGINX" != "true" ]; then
+  die "--install-nginx-vhost only makes sense together with --behind-nginx."
+fi
+if [ "$BEHIND_NGINX" = "true" ]; then
+  COMPOSE_FILE="$NGINX_COMPOSE_FILE"
+fi
+MODE_ARGS=""
+if [ "$BEHIND_NGINX" = "true" ]; then
+  MODE_ARGS="--behind-nginx --port $APP_PORT"
+fi
 
 # ── Require root (re-exec with sudo when available) ───────────────────────────
 if [ "$(id -u)" -ne 0 ]; then
@@ -144,10 +182,20 @@ fi
 PROJECT_DIR="$PWD"
 ENV_FILE="$PROJECT_DIR/.env"
 DATA_DIR="$PROJECT_DIR/data"
-[ -f "Caddyfile" ] || die "Caddyfile not found in $PROJECT_DIR (required for the HTTPS reverse proxy)."
+if [ "$BEHIND_NGINX" = "true" ]; then
+  [ -f "$NGINX_TEMPLATE" ] || die "$NGINX_TEMPLATE not found in $PROJECT_DIR (required in --behind-nginx mode)."
+else
+  [ -f "Caddyfile" ] || die "Caddyfile not found in $PROJECT_DIR (required for the Caddy HTTPS mode).
+       If your VPS already runs nginx on port 80/443, use --behind-nginx instead."
+fi
 
 heading "Family Tree App — production installer"
 info "Project directory: $PROJECT_DIR"
+if [ "$BEHIND_NGINX" = "true" ]; then
+  info "Mode: --behind-nginx (your existing nginx terminates TLS; app on 127.0.0.1:$APP_PORT)"
+else
+  info "Mode: bundled Caddy container (automatic HTTPS on ports 80/443)"
+fi
 
 # ── Reuse settings from an existing .env ──────────────────────────────────────
 # Read individual keys instead of sourcing the file: sourcing would overwrite the
@@ -163,12 +211,14 @@ EXISTING_DOMAIN=""
 EXISTING_ACME_EMAIL=""
 EXISTING_ADMIN_EMAIL=""
 EXISTING_PUBLIC_MODE=""
+EXISTING_APP_PORT=""
 if [ -f "$ENV_FILE" ]; then
   EXISTING_JWT_SECRET="$(env_get JWT_SECRET)"
   EXISTING_DOMAIN="$(env_get DOMAIN)"
   EXISTING_ACME_EMAIL="$(env_get ACME_EMAIL)"
   EXISTING_ADMIN_EMAIL="$(env_get ADMIN_EMAIL)"
   EXISTING_PUBLIC_MODE="$(env_get PUBLIC_MODE)"
+  EXISTING_APP_PORT="$(env_get APP_PORT)"
   info "Found an existing .env; values from it are used for anything not passed as a flag."
 fi
 
@@ -177,6 +227,20 @@ fi
 [ -n "$ACME_EMAIL" ] || ACME_EMAIL="$EXISTING_ACME_EMAIL"
 if [ "$PUBLIC_MODE_SET" != "true" ] && [ -n "$EXISTING_PUBLIC_MODE" ]; then
   PUBLIC_MODE="$EXISTING_PUBLIC_MODE"
+fi
+if [ "$APP_PORT_SET" != "true" ] && [ -n "$EXISTING_APP_PORT" ]; then
+  APP_PORT="$EXISTING_APP_PORT"
+fi
+
+# Validate the port here so a hand-edited .env cannot slip through either.
+case "$APP_PORT" in
+  ''|*[!0-9]*) die "--port must be a number (got '$APP_PORT')." ;;
+esac
+if [ "$APP_PORT" -lt 1 ] || [ "$APP_PORT" -gt 65535 ]; then
+  die "--port must be between 1 and 65535 (got '$APP_PORT')."
+fi
+if [ "$BEHIND_NGINX" = "true" ]; then
+  MODE_ARGS="--behind-nginx --port $APP_PORT"
 fi
 
 # ── Interactive prompts for anything still missing ────────────────────────────
@@ -273,33 +337,63 @@ for host in $(printf '%s' "$DOMAIN" | tr ',' ' '); do
 done
 if [ "$DNS_OK" != "true" ]; then
   warn "Let's Encrypt cannot issue a certificate until every domain points here (A record -> $PUBLIC_IP)."
-  warn "The app will still start; fix DNS and run 'docker compose -f $COMPOSE_FILE restart caddy' afterwards."
+  if [ "$BEHIND_NGINX" = "true" ]; then
+    warn "The app will still start; after the A record is live run the certbot command printed at the end."
+  else
+    warn "The app will still start; fix DNS and run 'docker compose -f $COMPOSE_FILE restart caddy' afterwards."
+  fi
 fi
 
-# ── Pre-flight: ports 80/443 ──────────────────────────────────────────────────
-heading "Checking ports 80 and 443"
+# ── Pre-flight: ports ─────────────────────────────────────────────────────────
 port_owner() { ss -H -ltnp 2>/dev/null | awk -v p=":$1" '$4 ~ p"$" {print $NF; exit}'; }
-for p in 80 443; do
-  owner="$(port_owner "$p" || true)"
+
+if [ "$BEHIND_NGINX" = "true" ]; then
+  # 80/443 are supposed to be taken by the host nginx; we only need APP_PORT.
+  heading "Checking port $APP_PORT (host nginx keeps 80/443)"
+  owner="$(port_owner "$APP_PORT" || true)"
   if [ -n "$owner" ]; then
     case "$owner" in
-      *docker-proxy*|*caddy*)
-        info "Port $p is held by the Docker/Caddy stack (expected on re-runs)." ;;
+      *docker-proxy*)
+        info "Port $APP_PORT is held by the Docker stack (expected on re-runs)." ;;
       *)
         if [ "$FORCE" = "true" ]; then
-          warn "Port $p is in use by: $owner (continuing because --force was given)."
+          warn "Port $APP_PORT is in use by: $owner (continuing because --force was given)."
         else
-          die "Port $p is already in use by: $owner
-       Stop or remove that service first, for example:
-         sudo systemctl disable --now nginx apache2 httpd
-       Then re-run this script (or pass --force to try anyway)."
-        fi
-        ;;
+          die "Port $APP_PORT is already in use by: $owner
+       Choose another one with --port <n>, or stop that service."
+        fi ;;
     esac
   else
-    log "Port $p is free."
+    log "Port $APP_PORT is free."
   fi
-done
+  info "Your existing nginx stays on 80/443 and will proxy to 127.0.0.1:$APP_PORT."
+else
+  heading "Checking ports 80 and 443"
+  for p in 80 443; do
+    owner="$(port_owner "$p" || true)"
+    if [ -n "$owner" ]; then
+      case "$owner" in
+        *docker-proxy*|*caddy*)
+          info "Port $p is held by the Docker/Caddy stack (expected on re-runs)." ;;
+        *)
+          if [ "$FORCE" = "true" ]; then
+            warn "Port $p is in use by: $owner (continuing because --force was given)."
+          else
+            die "Port $p is already in use by: $owner
+       If that is your own nginx, re-run with --behind-nginx (it proxies to the app
+       instead of fighting over the port):
+         sudo ./install-vps.sh --behind-nginx --port 8080 --install-nginx-vhost \\
+              --domain $DOMAIN --email $ACME_EMAIL
+       Otherwise stop that service, for example:
+         sudo systemctl disable --now nginx apache2 httpd"
+          fi
+          ;;
+      esac
+    else
+      log "Port $p is free."
+    fi
+  done
+fi
 
 # ── Install Docker ────────────────────────────────────────────────────────────
 heading "Docker"
@@ -308,19 +402,43 @@ if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; 
 elif [ "$DRY_RUN" = "true" ]; then
   warn "Docker is not installed; --dry-run stops before installing it."
 else
-  info "Installing Docker Engine and the Compose plugin from Docker's official apt repository..."
+  info "Installing Docker Engine and the Compose plugin..."
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -qq
   apt-get install -y -qq ca-certificates curl gnupg openssl >/dev/null
-  install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL "https://download.docker.com/linux/${OS_ID}/gpg" -o /etc/apt/keyrings/docker.asc
-  chmod a+r /etc/apt/keyrings/docker.asc
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${OS_ID} ${OS_CODENAME} stable" \
-    > /etc/apt/sources.list.d/docker.list
-  apt-get update -qq
-  apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin >/dev/null
+
+  if curl -fsS -o /dev/null --max-time 20 "https://download.docker.com/linux/${OS_ID}/dists/${OS_CODENAME}/Release"; then
+    info "Using Docker's apt repository for ${OS_ID} ${OS_CODENAME}..."
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL "https://download.docker.com/linux/${OS_ID}/gpg" -o /etc/apt/keyrings/docker.asc
+    chmod a+r /etc/apt/keyrings/docker.asc
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${OS_ID} ${OS_CODENAME} stable" \
+      > /etc/apt/sources.list.d/docker.list
+    apt-get update -qq
+    apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin >/dev/null
+  else
+    # Brand-new Ubuntu releases are often missing from Docker's apt repo for a
+    # while (e.g. 26.04 right after release), which makes `apt-get update` fail.
+    warn "Docker's apt repository has no '${OS_CODENAME}' release yet; using Docker's official convenience script instead."
+    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+    sh /tmp/get-docker.sh
+    rm -f /tmp/get-docker.sh
+  fi
+
   systemctl enable --now docker
   log "Docker installed: $(docker --version)"
+fi
+# The convenience script and some minimal images ship docker without the Compose
+# plugin; make sure it is available before we build.
+if ! docker compose version >/dev/null 2>&1; then
+  if [ "$DRY_RUN" = "true" ]; then
+    warn "The docker compose plugin is missing (a real run would install it)."
+  else
+    apt-get install -y -qq docker-compose-plugin >/dev/null 2>&1 \
+      || die "The Docker Compose plugin is missing and could not be installed. Install it manually: https://docs.docker.com/compose/install/linux/"
+    docker compose version >/dev/null 2>&1 || die "docker compose is still unavailable after installing docker-compose-plugin."
+    log "Docker Compose plugin installed."
+  fi
 fi
 if ! command -v openssl >/dev/null 2>&1; then
   if [ "$DRY_RUN" = "true" ]; then
@@ -343,11 +461,12 @@ else
 fi
 
 umask 077
-cat > "$ENV_FILE" <<EOF
+{
+cat <<EOF
 # Generated by install-vps.sh on $(date -u '+%Y-%m-%d %H:%M:%S UTC')
 # This file contains secrets — keep it private and out of version control.
 
-# Domain(s) served with automatic HTTPS (comma-separated).
+# Domain(s) this app is served on (comma-separated).
 DOMAIN=$DOMAIN
 
 # Contact address for Let's Encrypt certificate notices.
@@ -358,10 +477,21 @@ JWT_SECRET=$JWT_SECRET
 
 # true = anonymous visitors may read the tree; write actions still need login.
 PUBLIC_MODE=$PUBLIC_MODE
+EOF
+if [ "$BEHIND_NGINX" = "true" ]; then
+cat <<EOF
+
+# Host port the app's frontend is published on, bound to 127.0.0.1. Your own
+# nginx reverse-proxies the domain to http://127.0.0.1:\$APP_PORT.
+APP_PORT=$APP_PORT
+EOF
+fi
+cat <<EOF
 
 # Recorded for the installer; not read by the application.
 ADMIN_EMAIL=${ADMIN_EMAIL:-}
 EOF
+} > "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 log "Wrote $ENV_FILE (permissions 600)."
 
@@ -384,17 +514,27 @@ log "Using $DATA_DIR for the SQLite database."
 
 # ── Dry run stops here ────────────────────────────────────────────────────────
 if [ "$DRY_RUN" = "true" ]; then
+  if [ "$BEHIND_NGINX" = "true" ]; then
+    MODE_LABEL="behind-nginx (app on 127.0.0.1:$APP_PORT)"
+  else
+    MODE_LABEL="bundled Caddy (ports 80/443)"
+  fi
   printf "\n${BOLD}${GREEN}==> Dry run complete — nothing was installed or started.${NC}\n\n"
+  printf "  Mode            : %s\n" "$MODE_LABEL"
   printf "  Domain          : %s\n" "$DOMAIN"
   printf "  ACME email      : %s\n" "$ACME_EMAIL"
   printf "  Project dir     : %s\n" "$PROJECT_DIR"
   printf "  Public mode     : %s\n" "$PUBLIC_MODE"
   printf "  Admin email     : %s\n" "${ADMIN_EMAIL:-<skipped>}"
   printf "  Env file        : %s (written)\n" "$ENV_FILE"
+  REPLAY="sudo ./install-vps.sh"
+  if [ -n "$MODE_ARGS" ]; then
+    REPLAY="$REPLAY $MODE_ARGS"
+  fi
   cat <<EOF
 
 Re-run without --dry-run to build and start everything:
-  sudo ./install-vps.sh --domain $DOMAIN --email $ACME_EMAIL
+  $REPLAY --domain $DOMAIN --email $ACME_EMAIL
 
 EOF
   exit 0
@@ -429,18 +569,114 @@ if [ "$HEALTHY" != "true" ]; then
   "${DC[@]}" logs --tail 40 backend || true
 fi
 
-heading "Checking HTTPS"
-HTTPS_OK="false"
-for i in $(seq 1 12); do
-  if curl -fsS --max-time 8 -o /dev/null "https://${PRIMARY_DOMAIN}/health"; then HTTPS_OK="true"; break; fi
-  sleep 5
-done
-if [ "$HTTPS_OK" = "true" ]; then
-  log "https://${PRIMARY_DOMAIN}/health responds."
+CERT_OK="false"
+DOMAIN_SPACED="$(printf '%s' "$DOMAIN" | tr ',' ' ')"
+
+if [ "$BEHIND_NGINX" = "true" ]; then
+  heading "Checking the app on 127.0.0.1:$APP_PORT"
+  APP_OK="false"
+  for i in $(seq 1 12); do
+    if curl -fsS --max-time 8 -o /dev/null "http://127.0.0.1:${APP_PORT}/health"; then APP_OK="true"; break; fi
+    sleep 3
+  done
+  if [ "$APP_OK" = "true" ]; then
+    log "http://127.0.0.1:${APP_PORT}/health responds."
+  else
+    warn "The app did not answer on 127.0.0.1:${APP_PORT}."
+    warn "Check with: ${DC[*]} logs --tail 50"
+  fi
+
+  # ── Host nginx: vhost + certificate ─────────────────────────────────────────
+  heading "Host nginx reverse proxy"
+  if [ "$INSTALL_VHOST" = "true" ]; then
+    command -v nginx >/dev/null 2>&1 || die "nginx is not installed, but --install-nginx-vhost was given."
+    if [ -d /etc/nginx/sites-available ] && [ -d /etc/nginx/sites-enabled ]; then
+      VHOST_TARGET="/etc/nginx/sites-available/family-tree.conf"
+      VHOST_LINK="/etc/nginx/sites-enabled/family-tree.conf"
+    else
+      VHOST_TARGET="/etc/nginx/conf.d/family-tree.conf"
+      VHOST_LINK=""
+    fi
+
+    VHOST_BACKUP=""
+    if [ -f "$VHOST_TARGET" ]; then
+      VHOST_BACKUP="${VHOST_TARGET}.bak.$(date +%s)"
+      cp -a "$VHOST_TARGET" "$VHOST_BACKUP"
+      info "Backed up the existing vhost to $VHOST_BACKUP"
+    fi
+
+    sed -e "s/__DOMAIN__/${DOMAIN_SPACED}/g" -e "s/__APP_PORT__/${APP_PORT}/g" \
+      "$NGINX_TEMPLATE" > "$VHOST_TARGET"
+    if [ -n "$VHOST_LINK" ]; then
+      ln -sf "$VHOST_TARGET" "$VHOST_LINK"
+    fi
+
+    if nginx -t >/dev/null 2>&1; then
+      systemctl reload nginx 2>/dev/null || nginx -s reload
+      log "nginx vhost enabled for: $DOMAIN_SPACED -> 127.0.0.1:$APP_PORT"
+    else
+      err "nginx rejected the generated config:"
+      nginx -t || true
+      if [ -n "$VHOST_BACKUP" ]; then
+        mv -f "$VHOST_BACKUP" "$VHOST_TARGET"
+        warn "Restored your previous vhost."
+      else
+        rm -f "$VHOST_TARGET"
+        if [ -n "$VHOST_LINK" ]; then
+          rm -f "$VHOST_LINK"
+        fi
+        warn "Removed the generated vhost."
+      fi
+      die "Aborted without reloading nginx; your existing sites are untouched."
+    fi
+  else
+    info "Not touching /etc/nginx (pass --install-nginx-vhost to do it automatically)."
+    printf '       Manual install:\n'
+    printf '         sudo cp %s /etc/nginx/sites-available/family-tree.conf\n' "$NGINX_TEMPLATE"
+    printf "         sudo sed -i 's/__DOMAIN__/%s/; s/__APP_PORT__/%s/' /etc/nginx/sites-available/family-tree.conf\n" "$DOMAIN_SPACED" "$APP_PORT"
+    printf '         sudo ln -sf /etc/nginx/sites-available/family-tree.conf /etc/nginx/sites-enabled/\n'
+    printf '         sudo nginx -t && sudo systemctl reload nginx\n'
+  fi
+
+  # ── Certificate ─────────────────────────────────────────────────────────────
+  if [ "$SKIP_CERTBOT" = "true" ]; then
+    info "Skipping certbot (--skip-certbot)."
+  elif ! command -v certbot >/dev/null 2>&1; then
+    warn "certbot is not installed, so HTTPS is not enabled yet. Run:"
+    printf '         sudo apt-get install -y certbot python3-certbot-nginx\n'
+    printf '         sudo certbot --nginx -d %s --agree-tos -m %s --redirect\n' "$DOMAIN_SPACED" "$ACME_EMAIL"
+  elif [ "$DNS_OK" != "true" ]; then
+    warn "certbot skipped: DNS does not point here yet. Once the A record is live, run:"
+    printf '         sudo certbot --nginx -d %s --agree-tos -m %s --redirect\n' "$DOMAIN_SPACED" "$ACME_EMAIL"
+  elif [ "$INSTALL_VHOST" != "true" ]; then
+    warn "certbot skipped: the nginx vhost is not installed yet. Add it first (see above), then run:"
+    printf '         sudo certbot --nginx -d %s --agree-tos -m %s --redirect\n' "$DOMAIN_SPACED" "$ACME_EMAIL"
+  else
+    heading "Requesting the Let's Encrypt certificate"
+    CERTBOT_ARGS=(--nginx --non-interactive --agree-tos -m "$ACME_EMAIL" --redirect)
+    for d in $DOMAIN_SPACED; do CERTBOT_ARGS+=(-d "$d"); done
+    if certbot "${CERTBOT_ARGS[@]}"; then
+      CERT_OK="true"
+      log "HTTPS enabled for: $DOMAIN_SPACED"
+    else
+      warn "certbot failed, but the app itself is running."
+      warn "Inspect with: sudo certbot certificates   /   sudo tail -50 /var/log/letsencrypt/letsencrypt.log"
+    fi
+  fi
 else
-  warn "Could not reach https://${PRIMARY_DOMAIN}/health yet."
-  warn "Most common cause: DNS not pointing here, or ports 80/443 blocked at the provider."
-  warn "Check with: ${DC[*]} logs --tail 50 caddy"
+  heading "Checking HTTPS"
+  HTTPS_OK="false"
+  for i in $(seq 1 12); do
+    if curl -fsS --max-time 8 -o /dev/null "https://${PRIMARY_DOMAIN}/health"; then HTTPS_OK="true"; break; fi
+    sleep 5
+  done
+  if [ "$HTTPS_OK" = "true" ]; then
+    log "https://${PRIMARY_DOMAIN}/health responds."
+  else
+    warn "Could not reach https://${PRIMARY_DOMAIN}/health yet."
+    warn "Most common cause: DNS not pointing here, or ports 80/443 blocked at the provider."
+    warn "Check with: ${DC[*]} logs --tail 50 caddy"
+  fi
 fi
 
 # ── First admin account ───────────────────────────────────────────────────────
@@ -458,10 +694,20 @@ fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 printf "\n${BOLD}${GREEN}================= Installation complete =================${NC}\n\n"
-printf "  URL            : https://%s\n" "$PRIMARY_DOMAIN"
+if [ "$BEHIND_NGINX" = "true" ]; then
+  if [ "${CERT_OK:-false}" = "true" ]; then
+    printf "  URL            : https://%s\n" "$PRIMARY_DOMAIN"
+  else
+    printf "  URL            : https://%s  (HTTPS belum aktif — lihat catatan di bawah)\n" "$PRIMARY_DOMAIN"
+  fi
+  printf "  Backend app    : http://127.0.0.1:%s  (dipakai oleh nginx host)\n" "$APP_PORT"
+  printf "  Swagger UI     : https://%s/swagger/index.html\n" "$PRIMARY_DOMAIN"
+else
+  printf "  URL            : https://%s\n" "$PRIMARY_DOMAIN"
+  printf "  Swagger UI     : https://%s/swagger/index.html\n" "$PRIMARY_DOMAIN"
+fi
 printf "  Project dir    : %s\n" "$PROJECT_DIR"
 printf "  Database file  : %s/family_tree.db\n" "$DATA_DIR"
-printf "  Swagger UI     : https://%s/swagger/index.html\n" "$PRIMARY_DOMAIN"
 if [ "$SKIP_ADMIN" != "true" ]; then
   printf "  Admin login    : %s\n" "$ADMIN_EMAIL"
   printf "  Admin password : %s\n" "$ADMIN_PASSWORD"
@@ -474,6 +720,17 @@ Next steps
   * View logs        : ${DC[*]} logs -f
   * Restart          : ${DC[*]} restart
   * Update the app   : git pull && ${DC[*]} up -d --build
-  * Rotate the secret: sudo ./install-vps.sh --domain $DOMAIN --email $ACME_EMAIL --rotate-secret
+  * Rotate the secret: sudo ./install-vps.sh $MODE_ARGS --domain $DOMAIN --email $ACME_EMAIL --rotate-secret
+EOF
+if [ "$BEHIND_NGINX" = "true" ] && [ "${CERT_OK:-false}" != "true" ]; then
+  cat <<EOF
+  * Enable HTTPS     : sudo certbot --nginx -d $DOMAIN_SPACED --agree-tos -m $ACME_EMAIL --redirect
+                       (jalankan setelah A record $PRIMARY_DOMAIN mengarah ke IP VPS ini)
+
+Host nginx untuk domain ini belum tentu aktif. Kalau https belum jalan, pastikan
+vhost-nya terpasang (deploy/nginx-family-tree.conf) dan DNS sudah benar.
+EOF
+fi
+cat <<EOF
 
 EOF

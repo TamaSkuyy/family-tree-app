@@ -98,6 +98,97 @@ sudo ./install-vps.sh --repo-url https://github.com/TamaSkuyy/family-tree-app.gi
 
 ---
 
+## 3b. Kalau VPS sudah menjalankan nginx di port 80/443
+
+Gejalanya seperti ini:
+
+```
+[ERROR] Port 80 is already in use by: users:(("nginx",pid=31341,fd=7))
+```
+
+**Jangan** memindahkan Caddy ke port lain (mis. 8443): Let's Encrypt hanya bisa
+memverifikasi domain lewat port **80** atau **443**, jadi HTTPS otomatis tidak akan
+pernah terbit di port lain. Yang benar adalah memakai nginx yang sudah ada sebagai
+reverse proxy, dan menaruh app ini di `127.0.0.1:8080`.
+
+```bash
+cd /var/www/family-tree-app        # atau di mana repo-nya berada
+git pull                            # ambil dukungan --behind-nginx
+
+# Lihat dulu tanpa mengubah apa pun
+sudo ./install-vps.sh --behind-nginx --port 8080 \
+  --domain family-tree.sekuyy.my.id --email yomanf48@gmail.com --dry-run
+
+# Jalankan sungguhan; vhost nginx ditulis + dites + reload otomatis
+sudo ./install-vps.sh --behind-nginx --port 8080 --install-nginx-vhost \
+  --domain family-tree.sekuyy.my.id --email yomanf48@gmail.com
+```
+
+Apa yang dilakukan mode ini:
+
+1. Build dan jalankan backend + frontend saja (**tanpa** container Caddy).
+2. Frontend hanya dipublikasikan ke `127.0.0.1:8080` — tidak terbuka ke internet.
+3. Menulis `/etc/nginx/sites-available/family-tree.conf` (dari
+   `deploy/nginx-family-tree.conf`), menyalakan symlink di `sites-enabled`,
+   menjalankan `nginx -t`, lalu `systemctl reload nginx`.
+   Kalau `nginx -t` gagal, vhost lama dikembalikan dan nginx **tidak** disentuh.
+4. Menjalankan `certbot --nginx` kalau DNS sudah mengarah ke VPS ini.
+
+Kalau nginx-mu tidak memakai `sites-available`/`sites-enabled`, vhost ditulis ke
+`/etc/nginx/conf.d/family-tree.conf`.
+
+### DNS dulu, baru HTTPS
+
+Selama `family-tree.sekuyy.my.id` belum punya A record ke IP VPS, certbot tidak
+akan berhasil. Buat dulu record-nya:
+
+| Type | Name | Value |
+|---|---|---|
+| A | `family-tree` | `103.89.4.192` (IP publik VPS-mu) |
+
+Cek dari VPS (harus muncul IP VPS, bukan kosong):
+
+```bash
+getent hosts family-tree.sekuyy.my.id
+```
+
+Setelah DNS benar, terbitkan sertifikatnya:
+
+```bash
+sudo certbot --nginx -d family-tree.sekuyy.my.id \
+  --agree-tos -m yomanf48@gmail.com --redirect
+```
+
+Sementara belum ada HTTPS, app tetap bisa diakses lewat `http://family-tree.sekuyy.my.id`
+setelah vhost terpasang.
+
+### Kalau tidak ingin script menyentuh nginx
+
+Jalankan tanpa `--install-nginx-vhost`; installer hanya akan mencetak perintah
+manual-nya, dan kamu bisa memasang vhost sendiri:
+
+```bash
+sudo cp deploy/nginx-family-tree.conf /etc/nginx/sites-available/family-tree.conf
+sudo sed -i 's/__DOMAIN__/family-tree.sekuyy.my.id/; s/__APP_PORT__/8080/' \
+  /etc/nginx/sites-available/family-tree.conf
+sudo ln -sf /etc/nginx/sites-available/family-tree.conf /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### Ganti port app
+
+Kalau `8080` sudah dipakai proses lain di VPS:
+
+```bash
+sudo ./install-vps.sh --behind-nginx --port 9090 --install-nginx-vhost \
+  --domain family-tree.sekuyy.my.id --email yomanf48@gmail.com
+```
+
+Nilai `APP_PORT` disimpan di `.env`, jadi jalankan ulang tanpa `--port` akan
+memakai port yang sama seperti sebelumnya.
+
+---
+
 ## 4. Selesai — cek hasilnya
 
 ```bash
@@ -186,8 +277,29 @@ docker compose -f docker-compose.prod.yml restart backend
 
 **Port 80/443 sudah dipakai nginx atau apache host**
 
+Jangan matikan nginx yang mungkin sedang melayani situs lain. Pakai mode
+reverse-proxy — lihat [bagian 3b](#3b-kalau-vps-sudah-menjalankan-nginx-di-port-80443):
+
+```bash
+sudo ./install-vps.sh --behind-nginx --port 8080 --install-nginx-vhost \
+  --domain family.example.com --email kamu@example.com
+```
+
+Hanya kalau nginx host itu memang tidak dipakai untuk apa pun:
+
 ```bash
 sudo systemctl disable --now nginx apache2
+```
+
+**Database di mode behind-nginx**
+
+Semua perintah `docker compose` di dokumen ini memakai `-f docker-compose.prod.yml`.
+Di mode `--behind-nginx`, ganti dengan `-f docker-compose.nginx.yml`, misalnya:
+
+```bash
+docker compose -f docker-compose.nginx.yml ps
+docker compose -f docker-compose.nginx.yml logs -f
+docker compose -f docker-compose.nginx.yml up -d --build
 ```
 
 **Build frontend gagal di `npm ci`**

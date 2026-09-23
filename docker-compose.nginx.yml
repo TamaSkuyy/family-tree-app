@@ -1,0 +1,61 @@
+# Production stack for a VPS that ALREADY runs nginx (or another web server) on
+# ports 80/443 — i.e. when Caddy cannot bind them.
+#
+# Instead of terminating TLS itself, the app is published on 127.0.0.1 only and
+# the host's existing nginx reverse-proxies to it (see deploy/nginx-family-tree.conf).
+# Point your domain's server block at http://127.0.0.1:${APP_PORT} and run
+# `certbot --nginx -d your.domain` to get HTTPS.
+#
+# Usage (from the repository root, with a .env file next to this file):
+#   docker compose -f docker-compose.nginx.yml up -d --build
+#
+# Required in .env: JWT_SECRET. Optional: APP_PORT (default 8080), PUBLIC_MODE.
+
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      - ENV=production
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
+      - PUBLIC_MODE=${PUBLIC_MODE:-false}
+    volumes:
+      # SQLite lives in the container working directory (/data), so this bind mount
+      # is both the database and the backup surface: ./data/family_tree.db
+      - ./data:/data
+    working_dir: /data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ft-internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      # Bound to localhost on purpose: only the host nginx reaches this port, so
+      # the app is never exposed directly to the internet.
+      - "127.0.0.1:${APP_PORT:-8080}:80"
+    networks:
+      - ft-internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  ft-internal:
+    driver: bridge

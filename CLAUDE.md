@@ -41,6 +41,11 @@ go tool cover -html=coverage.out
 docker compose -f docker-compose.prod.yml up -d --build        # manual, no TLS
 docker compose -f docker-compose.prod.yml logs -f
 
+# Docker (production, when the VPS already runs nginx on 80/443)
+./install-vps.sh --behind-nginx --port 8080 --install-nginx-vhost \
+    --domain example.com --email you@example.com   # app on 127.0.0.1:8080; host nginx proxies
+docker compose -f docker-compose.nginx.yml up -d --build
+
 # Docker (production, plain :80 behind the bundled nginx)
 docker compose up -d --build    # start on :80
 docker compose down             # stop

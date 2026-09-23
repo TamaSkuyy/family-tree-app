@@ -142,16 +142,26 @@ frontend/                   React 18 / Vite / Tailwind + daisyUI
 | `./deploy-production.sh` | Build production artefacts to `build/` (needs gcc, see below) |
 | `./install-vps.sh` | One-shot VPS install: Docker + HTTPS + admin account |
 
-## 🚀 Deploy to a VPS (Docker + automatic HTTPS)
+## 🚀 Deploy to a VPS (Docker + HTTPS)
 
-See **[DEPLOY_VPS.md](DEPLOY_VPS.md)** for the full walkthrough. Short version, on the VPS:
+See **[DEPLOY_VPS.md](DEPLOY_VPS.md)** for the full walkthrough.
+
+**VPS with free ports 80/443** — a bundled Caddy container gets the certificate:
 
 ```bash
 sudo ./install-vps.sh --domain family.example.com --email you@example.com
 ```
 
-That installs Docker, writes `.env`, builds the stack, obtains a Let's Encrypt
-certificate via Caddy, and creates the first admin account.
+**VPS that already runs nginx on 80/443** — the app goes on `127.0.0.1:8080` and
+your existing nginx is configured as the reverse proxy (no port fight, no Caddy):
+
+```bash
+sudo ./install-vps.sh --behind-nginx --port 8080 --install-nginx-vhost \
+  --domain family.example.com --email you@example.com
+```
+
+Both modes install Docker, write `.env`, build the stack and create the first
+admin account.
 
 ```bash
 # Manual equivalent (no automatic HTTPS, serves plain :80)
