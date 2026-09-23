@@ -15,6 +15,7 @@ import (
 	"family-tree-backend/pkg/database"
 	"log"
 	"os"
+	"strings"
 
 	_ "family-tree-backend/docs"
 	"github.com/gin-contrib/cors"
@@ -37,9 +38,29 @@ func main() {
 	// Create Gin router
 	r := gin.Default()
 
-	// Configure CORS
+	// Configure CORS.
+	//
+	// In production the SPA and the API share one origin (nginx/Caddy proxies
+	// /api/* to this process), so a browser sends an Origin header equal to the
+	// request's own host and gin-contrib/cors lets it through without CORS
+	// headers. Anything else is rejected with 403.
+	//
+	// CORS_ORIGINS adds extra allowed origins (comma-separated, each as
+	// scheme://host[:port]) for setups that serve the frontend from a different
+	// host. The localhost entries below are for the Vite dev server.
+	devOrigins := []string{"http://localhost:3000", "http://127.0.0.1:3000"}
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000", "http://127.0.0.1:3000"}
+	config.AllowOrigins = devOrigins
+	if extra := strings.TrimSpace(os.Getenv("CORS_ORIGINS")); extra != "" {
+		added := make([]string, 0, 4)
+		for _, origin := range strings.Split(extra, ",") {
+			if o := strings.TrimSpace(origin); o != "" {
+				config.AllowOrigins = append(config.AllowOrigins, o)
+				added = append(added, o)
+			}
+		}
+		log.Printf("CORS: allowing extra origins from CORS_ORIGINS: %s", strings.Join(added, ", "))
+	}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
 	r.Use(cors.New(config))

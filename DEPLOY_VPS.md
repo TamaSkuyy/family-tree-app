@@ -243,6 +243,46 @@ sudo ./install-vps.sh --domain family.example.com --email kamu@example.com --rot
 
 ## 6. Kalau ada masalah
 
+**Login / register dari browser balas `403` (tapi `curl` jalan normal)**
+
+Ini bug CORS, dan penyebabnya halus: backend menolak `403` setiap `Origin` yang
+tidak dikenal. Aplikasi membandingkan `Origin` browser dengan header `Host`;
+kalau proxy membuang port dari `Host` (`proxy_set_header Host $host`), maka
+`http://localhost:8080` terlihat sebagai origin asing → 403. `curl` tidak
+mengirim header `Origin`, jadi gejalanya hanya muncul di browser.
+
+Sudah diperbaiki:
+
+- `frontend/nginx.conf` dan `deploy/nginx-family-tree.conf` memakai `$http_host`
+  (port ikut terbawa).
+- `.env` menyimpan `CORS_ORIGINS` berisi domainmu, dan backend membacanya.
+
+Kalau tetap 403 setelah update, pastikan tiga hal:
+
+```bash
+# 1. kode terbaru sudah ke-pull
+git log --oneline -1
+
+# 2. .env memuat domain yang benar
+grep CORS_ORIGINS .env
+
+# 3. container dibangun ulang (nginx.conf ada di dalam image frontend)
+sudo ./install-vps.sh --behind-nginx --port 8080 --domain family-tree.sekuyy.my.id --email kamu@example.com
+```
+
+Menguji tanpa browser (harus `200`/`201`, bukan `403`):
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' -X POST http://127.0.0.1:8080/api/v1/auth/login \
+  -H 'Content-Type: application/json' -H 'Origin: https://family-tree.sekuyy.my.id' \
+  -d '{"email":"admin@family-tree.sekuyy.my.id","password":"PASSWORD"}'
+```
+
+**`429 Too Many Requests` waktu login**
+
+Ada rate limit: login **5×/menit** dan register **3×/menit** per IP. Tunggu satu
+menit, lalu coba lagi. Kalau `PUBLIC_MODE=true`, endpoint baca dibatasi 30/menit.
+
 **Sertifikat HTTPS tidak terbit**
 
 ```bash

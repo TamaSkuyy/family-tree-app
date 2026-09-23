@@ -19,6 +19,10 @@ services:
       - ENV=production
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env}
       - PUBLIC_MODE=${PUBLIC_MODE:-false}
+      # Extra browser origins allowed to call the API, comma-separated
+      # (e.g. https://family.example.com,http://family.example.com).
+      # install-vps.sh fills this in; same-origin requests work without it.
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
     volumes:
       # SQLite lives in the container working directory (/data), so this bind mount
       # is both the database and the backup surface: ./data/family_tree.db
